@@ -258,10 +258,14 @@
         </div>
         <div id="snapReader" class="hidden"></div>
 
+        <!-- Big Instant Scan Result Banner (Positioned above camera for immediate visibility) -->
+        <div id="lastScanBanner" class="hidden rounded-2xl p-3.5 shadow-md border-2 animate-pop"></div>
+
         <!-- Live Camera Viewport -->
         <div id="cameraContainer" class="hidden space-y-1.5">
           <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[210px] flex items-center justify-center">
             <div id="reader" class="w-full"></div>
+            <div id="cameraHudOverlay" class="hidden absolute top-2 left-2 right-2 z-20 rounded-xl px-3 py-2 text-xs font-extrabold shadow-lg pointer-events-none text-center"></div>
           </div>
           <p class="text-[11px] text-center text-slate-500">
             ส่องบาร์โค้ดเลขพัสดุ (13 หลัก) ในกรอบ ระบบจะตรวจเทียบกับรายงานให้อัตโนมัติ
@@ -280,9 +284,6 @@
             เช็ค
           </button>
         </form>
-
-        <!-- Big Instant Scan Result Banner (with Click-to-Track) -->
-        <div id="lastScanBanner" class="hidden rounded-2xl p-3.5 shadow-md border-2 animate-pop"></div>
 
         <!-- Collapsible Test Simulation -->
         <details class="pt-1">
@@ -436,6 +437,37 @@
           ต้องการยกเลิก
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Immediate Alert Popup for Unlisted / Wrong-Date Tracking Numbers -->
+  <div id="unlistedPopupModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 shadow-2xl border-2 border-red-500 space-y-3 animate-pop" id="unlistedPopupBox">
+      <div class="text-base font-extrabold text-red-700 leading-snug" id="unlistedPopupTitle">🚨 แจ้งเตือน: เลขพัสดุนี้ ไม่มีในรายงาน!</div>
+      <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-center" id="unlistedPopupCodeWrap">
+        <div class="font-mono text-lg font-black text-red-800 break-all" id="unlistedPopupDisplayCode"></div>
+        <div class="font-mono text-[11px] text-red-600 mt-0.5" id="unlistedPopupRawCode"></div>
+      </div>
+      <p class="text-xs text-slate-700 leading-relaxed" id="unlistedPopupDesc">
+        ไม่พบเลขพัสดุนี้ในรายงานรับฝากของวันที่เลือก ระบบบันทึกไว้ในหมวด "ไม่มีในรายงาน" ให้แล้ว
+      </p>
+      <div class="space-y-2">
+        <a id="unlistedPopupQmsBtn" href="https://qms.thailandpost.com/" target="_blank" rel="noopener noreferrer"
+          class="block w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-extrabold text-center shadow-sm transition no-underline">
+          🔍 กดตรวจเลขนี้ใน QMS Track
+        </a>
+        <a id="unlistedPopupPublicBtn" href="https://track.thailandpost.co.th/" target="_blank" rel="noopener noreferrer"
+          class="block w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 text-slate-700 text-xs font-bold text-center transition no-underline">
+          🔍 ตรวจใน Track ปณท.
+        </a>
+        <button id="unlistedPopupSwitchDateBtn" type="button"
+          class="hidden w-full py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold shadow-sm transition">
+        </button>
+      </div>
+      <button id="btnUnlistedPopupAck" type="button"
+        class="w-full py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-extrabold shadow transition">
+        ✅ รับทราบ (สแกนชิ้นต่อไป)
+      </button>
     </div>
   </div>
 
@@ -686,9 +718,23 @@
       }
 
       // Sound & Vibration
+      function unlockAudio() {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          if (!audioCtx) audioCtx = new Ctx();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const buf = audioCtx.createBuffer(1, 1, 22050);
+          const src = audioCtx.createBufferSource();
+          src.buffer = buf;
+          src.connect(audioCtx.destination);
+          src.start(0);
+        } catch (err) {}
+      }
+
       function playFeedback(type) {
         if (navigator.vibrate) {
-          const patterns = { matched: [60], duplicate: [80, 60, 80], wrong_date: [140, 70, 140], extra: [300] };
+          const patterns = { matched: [60], duplicate: [80, 60, 80], wrong_date: [140, 70, 140], extra: [220, 80, 220, 80, 220] };
           navigator.vibrate(patterns[type] || [50]);
         }
         if (!ui.soundEnabled) return;
@@ -702,7 +748,7 @@
             const gain = audioCtx.createGain();
             osc.type = wave || 'sine';
             osc.frequency.setValueAtTime(freq, audioCtx.currentTime + off);
-            gain.gain.setValueAtTime(0.18, audioCtx.currentTime + off);
+            gain.gain.setValueAtTime(0.22, audioCtx.currentTime + off);
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + off + dur);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -712,7 +758,11 @@
           if (type === 'matched') beep(1046, 0, 0.14, 'sine');
           else if (type === 'duplicate') { beep(784, 0, 0.09, 'triangle'); beep(784, 0.13, 0.09, 'triangle'); }
           else if (type === 'wrong_date') { beep(660, 0, 0.12, 'triangle'); beep(440, 0.14, 0.18, 'triangle'); }
-          else if (type === 'extra') beep(220, 0, 0.32, 'sawtooth');
+          else if (type === 'extra') {
+            beep(320, 0, 0.13, 'sawtooth');
+            beep(240, 0.17, 0.13, 'sawtooth');
+            beep(320, 0.34, 0.18, 'sawtooth');
+          }
         } catch (err) {}
       }
 
@@ -871,7 +921,73 @@
         renderAll();
       }
 
+      function showCameraHud(type, title, tracking) {
+        const hud = document.getElementById('cameraHudOverlay');
+        if (!hud) return;
+        const styles = {
+          matched: 'bg-emerald-600 text-white',
+          duplicate: 'bg-amber-500 text-slate-950',
+          wrong_date: 'bg-orange-500 text-white',
+          extra: 'bg-red-600 text-white'
+        };
+        hud.className = `absolute top-2 left-2 right-2 z-20 rounded-xl px-3 py-2 text-xs font-extrabold shadow-lg pointer-events-none text-center animate-pop ${styles[type] || styles.extra}`;
+        hud.textContent = `${title} • ${formatDisplayTracking(tracking)}`;
+        clearTimeout(hud._timer);
+        hud._timer = setTimeout(() => hud.classList.add('hidden'), 2600);
+      }
+
+      function openUnlistedPopup(info) {
+        const modal = document.getElementById('unlistedPopupModal');
+        const box = document.getElementById('unlistedPopupBox');
+        const wrap = document.getElementById('unlistedPopupCodeWrap');
+        const titleEl = document.getElementById('unlistedPopupTitle');
+        const dispEl = document.getElementById('unlistedPopupDisplayCode');
+        const rawEl = document.getElementById('unlistedPopupRawCode');
+        const descEl = document.getElementById('unlistedPopupDesc');
+        const qmsBtn = document.getElementById('unlistedPopupQmsBtn');
+        const pubBtn = document.getElementById('unlistedPopupPublicBtn');
+        const swBtn = document.getElementById('unlistedPopupSwitchDateBtn');
+
+        const code = normalizeBarcode(info.tracking);
+        const isWrongDate = info.type === 'wrong_date';
+        box.className = `bg-white w-full max-w-xs rounded-2xl p-4 shadow-2xl border-2 space-y-3 animate-pop ${isWrongDate ? 'border-orange-500' : 'border-red-500'}`;
+        wrap.className = `rounded-xl p-3 text-center border ${isWrongDate ? 'bg-orange-50 border-orange-200' : 'bg-red-50 border-red-200'}`;
+        titleEl.className = `text-base font-extrabold leading-snug ${isWrongDate ? 'text-orange-700' : 'text-red-700'}`;
+        titleEl.textContent = isWrongDate ? '🟠 แจ้งเตือน: พัสดุนี้อยู่คนละวัน!' : '🚨 แจ้งเตือน: เลขพัสดุนี้ ไม่มีในรายงาน!';
+        dispEl.className = `font-mono text-lg font-black break-all ${isWrongDate ? 'text-orange-800' : 'text-red-800'}`;
+        dispEl.textContent = formatDisplayTracking(code);
+        rawEl.textContent = `(${code})`;
+        descEl.textContent = isWrongDate
+          ? `${info.subtitle} (${info.detail})`
+          : 'ไม่พบเลขพัสดุนี้ในรายงานรับฝากของวันที่เลือก ระบบบันทึกไว้ในหมวด "ไม่มีในรายงาน" ให้แล้ว';
+
+        qmsBtn.href = buildQmsTrackUrl(code);
+        qmsBtn.setAttribute('data-track-copy', code);
+        qmsBtn.setAttribute('data-track-target', 'QMS');
+        pubBtn.href = buildPublicTrackUrl(code);
+        pubBtn.setAttribute('data-track-copy', code);
+        pubBtn.setAttribute('data-track-target', 'ปณท');
+
+        if (info.switchDate) {
+          swBtn.textContent = `📅 สลับไปดูข้อมูลวันที่ ${formatThaiShortDate(info.switchDate)}`;
+          swBtn.setAttribute('data-switch-date', info.switchDate);
+          swBtn.classList.remove('hidden');
+        } else {
+          swBtn.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+      }
+
+      function closeUnlistedPopup() {
+        document.getElementById('unlistedPopupModal').classList.add('hidden');
+      }
+
       function renderScanBanner(info) {
+        showCameraHud(info.type, info.title, info.tracking);
+        if (info.type === 'extra' || info.type === 'wrong_date') {
+          openUnlistedPopup(info);
+        }
         const banner = document.getElementById('lastScanBanner');
         const styles = {
           matched: 'bg-emerald-50 border-emerald-500 text-emerald-950',
@@ -1221,6 +1337,7 @@
 
       // Camera Scanner Control
       async function toggleCamera() {
+        unlockAudio();
         const container = document.getElementById('cameraContainer');
         const btn = document.getElementById('btnToggleCamera');
         const stickyBtn = document.getElementById('btnStickyScan');
@@ -1247,18 +1364,26 @@
         stickyBtn.classList.replace('bg-[#d32f2f]', 'bg-slate-800');
 
         try {
-          if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
+          if (!html5QrCode) {
+            try {
+              html5QrCode = new Html5Qrcode('reader', { experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
+            } catch (e) {
+              html5QrCode = new Html5Qrcode('reader');
+            }
+          }
           ui.cameraActive = true;
           await html5QrCode.start(
             { facingMode: 'environment' },
             {
               fps: 10,
               qrbox: (viewW, viewH) => ({
-                width: Math.min(280, Math.floor(viewW * 0.85)),
-                height: Math.min(150, Math.floor(viewH * 0.55))
+                width: Math.min(340, Math.floor(viewW * 0.92)),
+                height: Math.min(160, Math.floor(viewH * 0.55))
               })
             },
             (decodedText) => {
+              const popupOpen = !document.getElementById('unlistedPopupModal').classList.contains('hidden');
+              if (popupOpen) return;
               const code = normalizeBarcode(decodedText);
               const now = Date.now();
               if (code === ui.lastCameraCode && now - ui.lastCameraTime < 1800) return;
@@ -1729,9 +1854,22 @@
 
         document.getElementById('btnToggleCamera').addEventListener('click', toggleCamera);
         document.getElementById('btnStickyScan').addEventListener('click', toggleCamera);
-        document.getElementById('btnSnapBarcode').addEventListener('click', () => document.getElementById('cameraSnapInput').click());
-        document.getElementById('btnStickySnap').addEventListener('click', () => document.getElementById('cameraSnapInput').click());
+        document.getElementById('btnSnapBarcode').addEventListener('click', () => { unlockAudio(); document.getElementById('cameraSnapInput').click(); });
+        document.getElementById('btnStickySnap').addEventListener('click', () => { unlockAudio(); document.getElementById('cameraSnapInput').click(); });
         document.getElementById('btnStickyTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        document.body.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+        document.body.addEventListener('click', unlockAudio, { once: true, passive: true });
+
+        document.getElementById('btnUnlistedPopupAck').addEventListener('click', closeUnlistedPopup);
+        document.getElementById('unlistedPopupModal').addEventListener('click', (e) => {
+          if (e.target.id === 'unlistedPopupModal') closeUnlistedPopup();
+        });
+        document.getElementById('unlistedPopupSwitchDateBtn').addEventListener('click', (e) => {
+          const d = e.currentTarget.getAttribute('data-switch-date');
+          closeUnlistedPopup();
+          if (d) { setSelectedDate(d); showToast('สลับวันที่เรียบร้อย'); }
+        });
+        bindTrackCopyLinks(document.getElementById('unlistedPopupModal'));
 
         document.getElementById('cameraSnapInput').addEventListener('change', async (e) => {
           const file = e.target.files && e.target.files[0];
