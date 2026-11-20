@@ -177,13 +177,18 @@
 
           <div class="flex items-center justify-between gap-2 text-[11px]">
             <label class="text-slate-600 font-semibold cursor-pointer">
-              📁 หรือเลือกไฟล์ CSV/TXT:
+              📁 ไฟล์ CSV/TXT:
               <input id="importFile" type="file" accept=".csv,.txt,.json" class="hidden" />
               <span class="underline text-blue-600 font-bold ml-1">เลือกไฟล์</span>
             </label>
-            <button id="btnResetSample" type="button" class="text-slate-500 hover:text-slate-800 font-bold">
-              🔄 โหลดข้อมูลตัวอย่าง
-            </button>
+            <div class="flex items-center gap-2.5">
+              <button id="btnConfigQmsDrawer" type="button" class="text-blue-600 hover:text-blue-800 font-bold">
+                ⚙️ ตั้งลิงก์ QMS
+              </button>
+              <button id="btnResetSample" type="button" class="text-slate-500 hover:text-slate-800 font-bold">
+                🔄 ตัวอย่าง
+              </button>
+            </div>
           </div>
 
           <div id="importFeedback" class="hidden text-xs rounded-xl p-2.5 font-semibold"></div>
@@ -307,31 +312,37 @@
 
       <!-- DEDICATED ALERT SECTION: Unlisted Tracking Numbers ("ไม่มีในรายงาน") -->
       <section id="unlistedAlertSection" class="hidden bg-red-50 rounded-2xl p-3.5 shadow-sm border-2 border-red-400 space-y-2 animate-pop">
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-start justify-between gap-2">
           <div>
             <h2 class="text-sm font-extrabold text-red-800" id="unlistedTitle">🚨 พบเลขที่ไม่มีในรายงาน (0 ชิ้น)</h2>
-            <p class="text-[11px] text-red-700">แตะที่เลขพัสดุเพื่อคัดลอกและเปิดหน้า Track ตรวจสอบสถานะ</p>
+            <p class="text-[11px] text-red-700">กดที่เลขพัสดุเพื่อคัดลอกและเปิด QMS เช็คสถานะ</p>
           </div>
-          <button id="btnCopyExtras" type="button"
-            class="shrink-0 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm transition">
-            📋 คัดลอกทั้งหมด
-          </button>
+          <div class="flex items-center gap-1 shrink-0">
+            <button id="btnConfigQms" type="button" title="ตั้งค่าลิงก์ QMS"
+              class="bg-white hover:bg-slate-100 border border-red-200 text-red-700 text-[10px] font-bold px-2 py-1.5 rounded-lg transition">
+              ⚙️ QMS
+            </button>
+            <button id="btnCopyExtras" type="button"
+              class="bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm transition">
+              📋 คัดลอก
+            </button>
+          </div>
         </div>
         <div id="unlistedListContainer" class="space-y-1.5"></div>
       </section>
 
-      <!-- STEP 3: Report Items List (Verify Manually or Click Number to Track) -->
+      <!-- STEP 3: Report Items List (Tap Card to Confirm Green / Tap Again to Cancel) -->
       <section class="space-y-2">
         <div class="flex items-center justify-between px-1">
-          <h2 class="text-xs font-extrabold text-slate-700">3️⃣ รายการในรายงาน (แตะเลขพัสดุเพื่อ Track ได้)</h2>
+          <h2 class="text-xs font-extrabold text-slate-700">3️⃣ รายการในรายงาน (แตะที่รายการเพื่อยืนยันว่ามีของ / แตะซ้ำเพื่อยกเลิก)</h2>
         </div>
 
         <!-- Compact Filter Pills -->
         <div class="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+          <button type="button" data-filter="all" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ทั้งหมด (0)</button>
           <button type="button" data-filter="pending" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ค้างเช็ค (0)</button>
           <button type="button" data-filter="verified" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">เช็คแล้ว (0)</button>
           <button type="button" data-filter="extra" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ไม่มีในรายงาน (0)</button>
-          <button type="button" data-filter="all" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ทั้งหมด (0)</button>
         </div>
 
         <div id="itemListContainer" class="space-y-2"></div>
@@ -410,6 +421,24 @@
     </div>
   </div>
 
+  <!-- Cancel Verification Confirmation Popup -->
+  <div id="cancelConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/75 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-2xl p-4 shadow-2xl space-y-3 animate-pop">
+      <div class="text-base font-extrabold text-slate-900">⚠️ ยืนยันการยกเลิก?</div>
+      <p class="text-xs text-slate-700 leading-relaxed" id="cancelConfirmMessage"></p>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button id="btnCancelKeep" type="button"
+          class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+          ไม่ยกเลิก
+        </button>
+        <button id="btnCancelProceed" type="button"
+          class="py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition">
+          ต้องการยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg pointer-events-none"></div>
 
@@ -419,6 +448,8 @@
 
       const STORAGE_KEY = 'postone_recheck_mobile_v2';
       const NODE_STORAGE_KEY = 'postone_node_code_v1';
+      const QMS_URL_STORAGE_KEY = 'postone_qms_url_v1';
+      const DEFAULT_QMS_URL = 'https://qms.thailandpost.com/';
       const MOBILE_HTTPS_URL = 'https://dreameraeker.github.io/postone-mobile-checker/';
       const MOBILE_LAN_URL = 'http://172.20.10.3:8080';
       const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -430,16 +461,35 @@
         return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]} ${m[5]}` : clean;
       }
 
+      function getQmsBaseUrl() {
+        try { return localStorage.getItem(QMS_URL_STORAGE_KEY) || DEFAULT_QMS_URL; } catch (e) { return DEFAULT_QMS_URL; }
+      }
+
+      function buildQmsTrackUrl(tracking) {
+        const code = normalizeBarcode(tracking);
+        const base = getQmsBaseUrl();
+        if (base.includes('{track}')) {
+          return base.replace(/\{track\}/g, encodeURIComponent(code));
+        }
+        return base;
+      }
+
       function buildPublicTrackUrl(tracking) {
         const code = normalizeBarcode(tracking);
         return `https://track.thailandpost.co.th/?trackNumber=${encodeURIComponent(code)}`;
       }
 
-      function buildPostOneTrackUrl(tracking) {
-        const code = normalizeBarcode(tracking);
-        const node = getPostOneNode();
-        const prefix = (!node || node === 'HOME') ? 'W08' : node;
-        return `https://postone.thailandpost.com/${prefix}/m/track?trackNumber=${encodeURIComponent(code)}`;
+      function configureQmsUrl() {
+        const current = getQmsBaseUrl();
+        const next = prompt(
+          'ระบุลิงก์หน้า QMS สำหรับค้นหา Track (รองรับใส่ {track} แทนตำแหน่งเลขพัสดุ หรือใส่ลิงก์หลักของ QMS ได้เลย):',
+          current
+        );
+        if (next === null) return;
+        const cleaned = next.trim() || DEFAULT_QMS_URL;
+        try { localStorage.setItem(QMS_URL_STORAGE_KEY, cleaned); } catch (e) {}
+        renderAll();
+        showToast('บันทึกลิงก์ QMS แล้ว');
       }
 
       function postOneBookmarkletFn() {
@@ -523,11 +573,13 @@
       const ui = {
         selectedDate: getLocalTodayISO(),
         customerFilter: 'ALL',
-        listFilter: 'pending',
+        listFilter: 'all',
         soundEnabled: true,
         cameraActive: false,
         lastCameraCode: '',
         lastCameraTime: 0,
+        lastMatchedItemId: null,
+        pendingCancelItemId: null,
         lastServerUpdatedAt: 0,
         isSyncingPush: false
       };
@@ -707,23 +759,17 @@
         return db.extras.filter(e => e.date === date);
       }
 
-      function renderTrackButtonsHtml(tracking, compact) {
+      function renderUnlistedTrackButtonsHtml(tracking) {
         const code = escapeHtml(normalizeBarcode(tracking));
-        if (compact) {
-          return `<a href="${escapeHtml(buildPublicTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
-            class="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-extrabold px-2 py-1 rounded-lg transition no-underline">
-            🔍 Track เลขนี้
-          </a>`;
-        }
         return `
           <div class="flex gap-1.5 mt-2">
-            <a href="${escapeHtml(buildPublicTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
+            <a href="${escapeHtml(buildQmsTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}" data-track-target="QMS"
               class="flex-1 py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-extrabold text-center shadow-sm transition no-underline">
-              🔍 กด Track ปณท (${code})
+              🔍 เปิด QMS Track (${code})
             </a>
-            <a href="${escapeHtml(buildPostOneTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
+            <a href="${escapeHtml(buildPublicTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}" data-track-target="ปณท"
               class="py-2 px-2.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 border border-slate-300 text-slate-700 text-xs font-bold text-center transition no-underline">
-              PostOne
+              ปณท
             </a>
           </div>
         `;
@@ -741,6 +787,10 @@
         const sameDateMatch = db.items.find(i => i.date === ui.selectedDate && i.tracking === code);
 
         if (sameDateMatch) {
+          ui.lastMatchedItemId = sameDateMatch.id;
+          if (ui.listFilter === 'pending' || ui.listFilter === 'extra') {
+            ui.listFilter = 'all';
+          }
           if (sameDateMatch.status === 'pending') {
             sameDateMatch.status = 'verified';
             sameDateMatch.verifiedAt = nowTime;
@@ -753,7 +803,7 @@
             renderScanBanner({
               type: 'matched',
               tracking: code,
-              title: '🟢 ตรงกับในรายงาน!',
+              title: '🟢 มีชิ้นงานนี้ในรายงานแล้ว!',
               subtitle: `ร้าน: ${sameDateMatch.customer}${otherNote}`,
               detail: `${sameDateMatch.note ? sameDateMatch.note + ' • ' : ''}เหลือค้างเช็ค ${remaining} ชิ้น`
             });
@@ -762,7 +812,7 @@
             renderScanBanner({
               type: 'duplicate',
               tracking: code,
-              title: '🟡 ยิงซ้ำ! พัสดุนี้เช็คไปแล้ว',
+              title: '🟡 ยิงซ้ำ! ชิ้นงานนี้เช็คเป็นสีเขียวแล้ว',
               subtitle: `ร้าน: ${sameDateMatch.customer}`,
               detail: `เช็คไปแล้วเมื่อเวลา ${sameDateMatch.verifiedAt}`
             });
@@ -813,7 +863,7 @@
           tracking: code,
           title: '🔴 ไม่มีในรายงาน! (พัสดุเกิน)',
           subtitle: `เลขที่ ${formatDisplayTracking(code)} ไม่พบในรายงานวันที่เลือก`,
-          detail: 'กดที่เลขด้านล่างเพื่อเปิดดู Track หรือแยกไว้บันทึกเข้าระบบ PostOne',
+          detail: 'กดที่ปุ่มด้านล่างเพื่อคัดลอกเลขและเปิด QMS เช็คสถานะ',
           isUnlisted: true
         });
 
@@ -840,7 +890,7 @@
           : '';
 
         const isTrackingCode = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(normalizeBarcode(info.tracking));
-        const trackBlock = isTrackingCode ? renderTrackButtonsHtml(info.tracking, false) : '';
+        const trackBlock = (info.isUnlisted && isTrackingCode) ? renderUnlistedTrackButtonsHtml(info.tracking) : '';
 
         banner.innerHTML = `
           <div class="flex items-start justify-between gap-2">
@@ -869,7 +919,8 @@
         container.querySelectorAll('[data-track-copy]').forEach(el => {
           el.addEventListener('click', () => {
             const code = el.getAttribute('data-track-copy');
-            copyText(code, `คัดลอก ${code} แล้ว • กำลังเปิดหน้า Track`);
+            const target = el.getAttribute('data-track-target') || 'QMS';
+            copyText(code, `คัดลอก ${code} แล้ว • กำลังเปิด ${target}`);
           });
         });
       }
@@ -973,18 +1024,18 @@
         listEl.innerHTML = extras.map(ex => `
           <div class="bg-white rounded-xl p-2.5 border border-red-200 flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+              <a href="${escapeHtml(buildQmsTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}" data-track-target="QMS"
                 class="font-mono text-sm font-black text-red-700 hover:text-red-900 underline break-all">
                 🔍 ${escapeHtml(formatDisplayTracking(ex.tracking))}
               </a>
               <div class="text-[10px] text-slate-500">
-                สแกนเมื่อ ${escapeHtml(ex.scannedAt)}${ex.count > 1 ? ` • ยิงซ้ำ ${ex.count} ครั้ง` : ''} • กดที่เลขเพื่อไป Track
+                สแกนเมื่อ ${escapeHtml(ex.scannedAt)}${ex.count > 1 ? ` • ยิงซ้ำ ${ex.count} ครั้ง` : ''} • แตะที่เลขเพื่อเปิด QMS
               </div>
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <a href="${escapeHtml(buildPostOneTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+              <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}" data-track-target="ปณท"
                 class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1.5 rounded-lg no-underline">
-                PostOne
+                ปณท
               </a>
               <button type="button" data-del-extra="${escapeHtml(ex.id)}"
                 class="bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold px-2 py-1.5 rounded-lg">
@@ -1005,6 +1056,18 @@
         });
       }
 
+      function openCancelModal(item) {
+        ui.pendingCancelItemId = item.id;
+        document.getElementById('cancelConfirmMessage').innerHTML =
+          `ต้องการยกเลิกการเช็คเลขที่ <b class="font-mono text-slate-900">${escapeHtml(formatDisplayTracking(item.tracking))}</b> (${escapeHtml(item.customer)}) ใช่หรือไม่?`;
+        document.getElementById('cancelConfirmModal').classList.remove('hidden');
+      }
+
+      function closeCancelModal() {
+        ui.pendingCancelItemId = null;
+        document.getElementById('cancelConfirmModal').classList.add('hidden');
+      }
+
       function renderReportList() {
         const items = getDateItems(ui.selectedDate, ui.customerFilter);
         const extras = getDateExtras(ui.selectedDate);
@@ -1012,17 +1075,17 @@
         const verifiedItems = items.filter(i => i.status === 'verified');
 
         const counts = {
+          all: items.length,
           pending: pendingItems.length,
           verified: verifiedItems.length,
-          extra: extras.length,
-          all: items.length
+          extra: extras.length
         };
 
         const labels = {
+          all: 'ทั้งหมด',
           pending: 'ค้างเช็ค',
           verified: 'เช็คแล้ว',
-          extra: 'ไม่มีในรายงาน',
-          all: 'ทั้งหมด'
+          extra: 'ไม่มีในรายงาน'
         };
 
         document.querySelectorAll('.list-pill').forEach(btn => {
@@ -1046,17 +1109,23 @@
               <div class="min-w-0">
                 <span class="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🔴 ไม่มีในรายงาน</span>
                 <div class="mt-1">
-                  <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+                  <a href="${escapeHtml(buildQmsTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}" data-track-target="QMS"
                     class="font-mono text-base font-extrabold text-red-700 underline break-all">
-                    ${escapeHtml(formatDisplayTracking(ex.tracking))}
+                    🔍 ${escapeHtml(formatDisplayTracking(ex.tracking))}
                   </a>
                 </div>
-                <div class="text-[11px] text-slate-500 mt-0.5">สแกนเมื่อ ${escapeHtml(ex.scannedAt)} • แตะที่เลขเพื่อไปหน้า Track</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">สแกนเมื่อ ${escapeHtml(ex.scannedAt)} • แตะที่เลขเพื่อเปิด QMS</div>
               </div>
-              <button type="button" data-del-extra="${escapeHtml(ex.id)}"
-                class="shrink-0 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-bold px-2.5 py-2 rounded-xl">
-                ลบ
-              </button>
+              <div class="flex items-center gap-1 shrink-0">
+                <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}" data-track-target="ปณท"
+                  class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl no-underline">
+                  ปณท
+                </a>
+                <button type="button" data-del-extra="${escapeHtml(ex.id)}"
+                  class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-2.5 py-2 rounded-xl">
+                  ลบ
+                </button>
+              </div>
             </div>
           `).join('');
           bindTrackCopyLinks(containerEl);
@@ -1085,67 +1154,55 @@
 
         containerEl.innerHTML = list.map(item => {
           const isVerified = item.status === 'verified';
+          const isLatestMatch = isVerified && ui.lastMatchedItemId === item.id;
+          const cardStyle = isVerified
+            ? `bg-emerald-100 border-2 border-emerald-500${isLatestMatch ? ' ring-4 ring-emerald-300' : ''}`
+            : 'bg-white border border-amber-200 hover:bg-amber-50/40';
+
           const badge = isVerified
-            ? `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">✅ เช็คแล้ว (${escapeHtml(item.verifiedAt || '')})</span>`
+            ? `<span class="bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">✅ มีชิ้นงานนี้แล้ว (${escapeHtml(item.verifiedAt || '')})</span>`
             : `<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">⏳ ค้างเช็ค</span>`;
 
-          const actionBtn = isVerified
-            ? `<button type="button" data-undo-id="${escapeHtml(item.id)}"
-                 class="shrink-0 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 text-xs font-bold px-3 py-2 rounded-xl transition">
-                 ↩️ ยกเลิก
-               </button>`
-            : `<button type="button" data-confirm-id="${escapeHtml(item.id)}"
-                 class="shrink-0 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-sm transition">
-                 ✅ กดยืนยันมือ
-               </button>`;
+          const rightPill = isVerified
+            ? `<span class="shrink-0 bg-white/90 border border-emerald-400 text-emerald-800 text-[11px] font-bold px-2.5 py-2 rounded-xl text-center leading-tight">
+                 🟢 เช็คแล้ว<br><span class="text-[9px] text-emerald-700 font-normal">แตะซ้ำเพื่อยกเลิก</span>
+               </span>`
+            : `<span class="shrink-0 bg-emerald-600 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-sm">
+                 ✅ ยืนยันมีของ
+               </span>`;
 
           return `
-            <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${isVerified ? 'border-emerald-200' : 'border-amber-200'} flex items-center justify-between gap-2">
+            <div data-card-item-id="${escapeHtml(item.id)}" role="button" tabindex="0"
+              class="rounded-2xl p-3.5 shadow-sm transition cursor-pointer select-none active:scale-[0.99] flex items-center justify-between gap-2 ${cardStyle}">
               <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  ${badge}
-                  ${renderTrackButtonsHtml(item.tracking, true)}
-                </div>
-                <a href="${escapeHtml(buildPublicTrackUrl(item.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(item.tracking)}"
-                  class="block font-mono text-base font-extrabold text-slate-900 hover:text-blue-700 mt-1 break-all no-underline">
+                <div class="flex flex-wrap items-center gap-1.5">${badge}</div>
+                <div class="font-mono text-base font-extrabold text-slate-900 mt-1 break-all">
                   ${escapeHtml(formatDisplayTracking(item.tracking))}
-                </a>
-                <div class="text-[10px] font-mono text-slate-400">(${escapeHtml(item.tracking)})</div>
-                <div class="text-xs font-bold text-slate-700 truncate mt-0.5">${escapeHtml(item.customer)}</div>
-                ${item.note ? `<div class="text-[11px] text-slate-500 truncate">${escapeHtml(item.note)}</div>` : ''}
+                </div>
+                <div class="text-[10px] font-mono text-slate-500">(${escapeHtml(item.tracking)})</div>
+                <div class="text-xs font-bold text-slate-800 truncate mt-0.5">${escapeHtml(item.customer)}</div>
+                ${item.note ? `<div class="text-[11px] text-slate-600 truncate">${escapeHtml(item.note)}</div>` : ''}
               </div>
-              ${actionBtn}
+              ${rightPill}
             </div>
           `;
         }).join('');
 
-        bindTrackCopyLinks(containerEl);
-
-        containerEl.querySelectorAll('[data-confirm-id]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const item = db.items.find(i => i.id === btn.getAttribute('data-confirm-id'));
-            if (item) {
+        containerEl.querySelectorAll('[data-card-item-id]').forEach(card => {
+          card.addEventListener('click', () => {
+            const item = db.items.find(i => i.id === card.getAttribute('data-card-item-id'));
+            if (!item) return;
+            if (item.status === 'pending') {
               item.status = 'verified';
               item.verifiedAt = formatTimeNow();
               item.method = 'manual';
+              ui.lastMatchedItemId = item.id;
               playFeedback('matched');
               saveStorage();
               renderAll();
-              showToast(`ยืนยัน ${item.tracking} แล้ว`);
-            }
-          });
-        });
-
-        containerEl.querySelectorAll('[data-undo-id]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const item = db.items.find(i => i.id === btn.getAttribute('data-undo-id'));
-            if (item) {
-              item.status = 'pending';
-              item.verifiedAt = null;
-              item.method = null;
-              saveStorage();
-              renderAll();
-              showToast(`คืนสถานะค้างเช็ค ${item.tracking}`);
+              showToast(`🟢 ยืนยัน ${formatDisplayTracking(item.tracking)} มีชิ้นงานแล้ว`);
+            } else {
+              openCancelModal(item);
             }
           });
         });
@@ -1698,6 +1755,28 @@
           const extras = getDateExtras(ui.selectedDate);
           if (!extras.length) return;
           copyText(extras.map(e => e.tracking).join('\n'), `คัดลอกเลขที่ไม่มีในรายงาน ${extras.length} รายการแล้ว`);
+        });
+        document.getElementById('btnConfigQms').addEventListener('click', configureQmsUrl);
+        document.getElementById('btnConfigQmsDrawer').addEventListener('click', configureQmsUrl);
+
+        document.getElementById('btnCancelKeep').addEventListener('click', closeCancelModal);
+        document.getElementById('cancelConfirmModal').addEventListener('click', (e) => {
+          if (e.target.id === 'cancelConfirmModal') closeCancelModal();
+        });
+        document.getElementById('btnCancelProceed').addEventListener('click', () => {
+          const id = ui.pendingCancelItemId;
+          closeCancelModal();
+          if (!id) return;
+          const item = db.items.find(i => i.id === id);
+          if (item) {
+            item.status = 'pending';
+            item.verifiedAt = null;
+            item.method = null;
+            if (ui.lastMatchedItemId === item.id) ui.lastMatchedItemId = null;
+            saveStorage();
+            renderAll();
+            showToast(`↩️ ยกเลิกการเช็ค ${formatDisplayTracking(item.tracking)} แล้ว`);
+          }
         });
 
         document.querySelectorAll('.list-pill').forEach(btn => {
