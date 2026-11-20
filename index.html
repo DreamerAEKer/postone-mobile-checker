@@ -258,11 +258,14 @@
         </div>
         <div id="snapReader" class="hidden"></div>
 
-        <!-- Big Instant Scan Result Banner (Positioned above camera for immediate visibility) -->
-        <div id="lastScanBanner" class="hidden rounded-2xl p-3.5 shadow-md border-2 animate-pop"></div>
-
-        <!-- Live Camera Viewport -->
+        <!-- Live Camera Viewport (Positioned first right under camera button) -->
         <div id="cameraContainer" class="hidden space-y-1.5">
+          <div id="cameraMiniStats" class="bg-slate-800 text-white rounded-xl px-3 py-1.5 text-[11px] font-bold flex items-center justify-between gap-1">
+            <span>ในรายงาน: 0</span>
+            <span class="text-emerald-300">เช็คแล้ว: 0</span>
+            <span class="text-amber-300">ค้าง: 0</span>
+            <span class="text-red-300">เกิน: 0</span>
+          </div>
           <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[210px] flex items-center justify-center">
             <div id="reader" class="w-full"></div>
             <div id="cameraHudOverlay" class="hidden absolute top-2 left-2 right-2 z-20 rounded-xl px-3 py-2 text-xs font-extrabold shadow-lg pointer-events-none text-center"></div>
@@ -271,6 +274,9 @@
             ส่องบาร์โค้ดเลขพัสดุ (13 หลัก) ในกรอบ ระบบจะตรวจเทียบกับรายงานให้อัตโนมัติ
           </p>
         </div>
+
+        <!-- Big Instant Scan Result Banner -->
+        <div id="lastScanBanner" class="hidden rounded-2xl p-3.5 shadow-md border-2 animate-pop"></div>
 
         <div id="cameraNotice" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5 leading-relaxed"></div>
 
@@ -1125,6 +1131,11 @@
         document.getElementById('statExtra').textContent = extraCount;
         document.getElementById('progressPercentLabel').textContent = `${pct}% (${verified}/${total})`;
         document.getElementById('progressBarFill').style.width = `${pct}%`;
+
+        const mini = document.getElementById('cameraMiniStats');
+        if (mini) {
+          mini.innerHTML = `<span>ในรายงาน: ${total}</span><span class="text-emerald-300">เช็คแล้ว: ${verified}</span><span class="text-amber-300">ค้าง: ${pending}</span><span class="text-red-300">เกิน: ${extraCount}</span>`;
+        }
       }
 
       function renderUnlistedAlertSection() {
@@ -1335,6 +1346,15 @@
         renderReportList();
       }
 
+      function scrollToCameraViewport() {
+        const container = document.getElementById('cameraContainer');
+        if (!container || container.classList.contains('hidden')) return;
+        const headerEl = document.querySelector('header');
+        const headerH = headerEl ? headerEl.offsetHeight : 110;
+        const top = container.getBoundingClientRect().top + window.pageYOffset - headerH - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      }
+
       // Camera Scanner Control
       async function toggleCamera() {
         unlockAudio();
@@ -1355,8 +1375,8 @@
           return;
         }
 
-        document.getElementById('cameraCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
         container.classList.remove('hidden');
+        scrollToCameraViewport();
         btn.innerHTML = '<span>⏹️ ปิดกล้องสแกน</span>';
         btn.classList.replace('bg-[#d32f2f]', 'bg-slate-800');
         btn.classList.replace('hover:bg-red-700', 'hover:bg-slate-900');
@@ -1393,6 +1413,8 @@
             },
             () => {}
           );
+          scrollToCameraViewport();
+          setTimeout(scrollToCameraViewport, 150);
         } catch (err) {
           ui.cameraActive = false;
           container.classList.add('hidden');
