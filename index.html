@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#d32f2f" />
   <title>รีเช็คพัสดุรับฝาก (PostOne Mobile)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.9.15/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@undecaf/barcode-detector-polyfill@0.9.21/dist/index.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -258,20 +260,39 @@
         </div>
         <div id="snapReader" class="hidden"></div>
 
-        <!-- Live Camera Viewport (Positioned first right under camera button) -->
-        <div id="cameraContainer" class="hidden space-y-1.5">
+        <!-- Live Camera Viewport (Full HD + ZBar WASM + Zoom/Torch/Snap) -->
+        <div id="cameraContainer" class="hidden space-y-2">
           <div id="cameraMiniStats" class="bg-slate-800 text-white rounded-xl px-3 py-1.5 text-[11px] font-bold flex items-center justify-between gap-1">
             <span>ในรายงาน: 0</span>
             <span class="text-emerald-300">เช็คแล้ว: 0</span>
             <span class="text-amber-300">ค้าง: 0</span>
             <span class="text-red-300">เกิน: 0</span>
           </div>
-          <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[210px] flex items-center justify-center">
-            <div id="reader" class="w-full"></div>
+          <div class="relative bg-slate-950 rounded-xl overflow-hidden min-h-[240px] flex items-center justify-center">
+            <video id="liveCameraVideo" playsinline muted autoplay class="w-full max-h-[340px] object-cover transition-transform duration-150"></video>
+            <div id="reader" class="w-full hidden"></div>
+            <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div class="w-[84%] h-[38%] border-2 border-white/85 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,0.3)] relative flex items-center justify-center">
+                <div class="w-full h-[2px] bg-red-500/85 shadow-[0_0_8px_rgba(239,68,68,0.95)]"></div>
+              </div>
+            </div>
             <div id="cameraHudOverlay" class="hidden absolute top-2 left-2 right-2 z-20 rounded-xl px-3 py-2 text-xs font-extrabold shadow-lg pointer-events-none text-center"></div>
           </div>
+          <div class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button type="button" data-zoom="1" class="cam-zoom-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 text-white transition">1x</button>
+              <button type="button" data-zoom="1.5" class="cam-zoom-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-white transition">1.5x</button>
+              <button type="button" data-zoom="2" class="cam-zoom-btn px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-white transition">2x</button>
+            </div>
+            <button id="btnTorchToggle" type="button" class="hidden py-1.5 px-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 text-[11px] font-bold transition">
+              🔦 ไฟฉาย
+            </button>
+            <button id="btnLiveFrameSnap" type="button" class="flex-1 py-1.5 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold shadow-sm transition">
+              ⚡ กดจับภาพสแกนทันที
+            </button>
+          </div>
           <p class="text-[11px] text-center text-slate-500">
-            ส่องบาร์โค้ดเลขพัสดุ (13 หลัก) ในกรอบ ระบบจะตรวจเทียบกับรายงานให้อัตโนมัติ
+            วางบาร์โค้ดแนวนอนพาดเส้นสีแดง (ห่าง ~15–25 ซม. หรือลองกด <b class="text-slate-700">1.5x / 2x</b>)
           </p>
         </div>
 
@@ -1355,7 +1376,184 @@
         window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
       }
 
-      // Camera Scanner Control
+      // ZBar WASM BarcodeDetector Engine + Multi-Pass Decoder
+      const BARCODE_FORMATS = ['code_128', 'code_39', 'ean_13', 'itf', 'qr_code'];
+      let cachedDetector = null;
+      let camStream = null;
+      let camScanTimer = null;
+      let camZoom = 1;
+      let camTorchOn = false;
+      let camHardwareZoomSupported = false;
+      let camBusy = false;
+      let camTickCount = 0;
+
+      async function getBarcodeDetector() {
+        if (cachedDetector) return cachedDetector;
+
+        if ('BarcodeDetector' in window && typeof window.BarcodeDetector.getSupportedFormats === 'function') {
+          try {
+            const fmts = await window.BarcodeDetector.getSupportedFormats();
+            if (Array.isArray(fmts) && fmts.includes('code_128')) {
+              cachedDetector = new window.BarcodeDetector({ formats: BARCODE_FORMATS.filter(f => fmts.includes(f)) });
+              return cachedDetector;
+            }
+          } catch (e) {}
+        }
+
+        if (typeof barcodeDetectorPolyfill !== 'undefined' && barcodeDetectorPolyfill.BarcodeDetectorPolyfill) {
+          try {
+            window.BarcodeDetector = barcodeDetectorPolyfill.BarcodeDetectorPolyfill;
+            cachedDetector = new window.BarcodeDetector({ formats: BARCODE_FORMATS });
+            return cachedDetector;
+          } catch (e) {
+            try {
+              cachedDetector = new barcodeDetectorPolyfill.BarcodeDetectorPolyfill();
+              return cachedDetector;
+            } catch (e2) {}
+          }
+        }
+
+        if ('BarcodeDetector' in window) {
+          try {
+            cachedDetector = new window.BarcodeDetector();
+            return cachedDetector;
+          } catch (e) {}
+        }
+        return null;
+      }
+
+      function createHighContrastCanvas(srcCanvas) {
+        const out = document.createElement('canvas');
+        out.width = srcCanvas.width;
+        out.height = srcCanvas.height;
+        const ctx = out.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(srcCanvas, 0, 0);
+        const imgData = ctx.getImageData(0, 0, out.width, out.height);
+        const d = imgData.data;
+        let min = 255;
+        let max = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const g = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+          if (g < min) min = g;
+          if (g > max) max = g;
+        }
+        const range = Math.max(1, max - min);
+        for (let i = 0; i < d.length; i += 4) {
+          const g = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8;
+          const norm = ((g - min) * 255) / range;
+          const v = norm < 132 ? 0 : 255;
+          d[i] = d[i + 1] = d[i + 2] = v;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return out;
+      }
+
+      function drawScaledCanvas(src, srcX, srcY, srcW, srcH, maxDim) {
+        const scale = Math.min(1, maxDim / Math.max(srcW, srcH));
+        const w = Math.max(1, Math.round(srcW * scale));
+        const h = Math.max(1, Math.round(srcH * scale));
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(src, srcX, srcY, srcW, srcH, 0, 0, w, h);
+        return c;
+      }
+
+      async function detectWithDetector(det, source) {
+        if (!det || !source) return '';
+        try {
+          const hits = await det.detect(source);
+          if (hits && hits.length) {
+            const preferred = hits.find(h => /[A-Z]{2}\s*\d{9}\s*[A-Z]{2}/i.test(String(h.rawValue || ''))) || hits[0];
+            if (preferred && preferred.rawValue) return preferred.rawValue;
+          }
+        } catch (e) {}
+        return '';
+      }
+
+      async function decodeBarcodeFromDrawable(src, srcW, srcH) {
+        const det = await getBarcodeDetector();
+        if (det) {
+          const pass1 = drawScaledCanvas(src, 0, 0, srcW, srcH, 1600);
+          let code = await detectWithDetector(det, pass1);
+          if (code) return code;
+
+          const pass2 = drawScaledCanvas(src, 0, 0, srcW, srcH, 1024);
+          code = await detectWithDetector(det, pass2);
+          if (code) return code;
+
+          const cw = Math.round(srcW * 0.85);
+          const ch = Math.round(srcH * 0.45);
+          const cx = Math.round((srcW - cw) / 2);
+          const cy = Math.round((srcH - ch) / 2);
+          const cropPass = drawScaledCanvas(src, cx, cy, cw, ch, 1400);
+          code = await detectWithDetector(det, cropPass);
+          if (code) return code;
+
+          const pass4Full = createHighContrastCanvas(drawScaledCanvas(src, 0, 0, srcW, srcH, 1400));
+          code = await detectWithDetector(det, pass4Full);
+          if (code) return code;
+
+          const pass4Crop = createHighContrastCanvas(cropPass);
+          code = await detectWithDetector(det, pass4Crop);
+          if (code) return code;
+        }
+
+        if (typeof Html5Qrcode !== 'undefined') {
+          try {
+            const fbCanvas = drawScaledCanvas(src, 0, 0, srcW, srcH, 1280);
+            const blob = await new Promise(res => fbCanvas.toBlob(res, 'image/jpeg', 0.92));
+            if (blob) {
+              const fbFile = new File([blob], 'scan.jpg', { type: 'image/jpeg' });
+              const snapQr = new Html5Qrcode('snapReader');
+              const decoded = await snapQr.scanFile(fbFile, false);
+              if (decoded) return decoded;
+            }
+          } catch (e) {}
+        }
+        return '';
+      }
+
+      function applyCameraZoom(level) {
+        camZoom = Number(level) || 1;
+        document.querySelectorAll('.cam-zoom-btn').forEach(btn => {
+          const active = Number(btn.getAttribute('data-zoom')) === camZoom;
+          btn.className = `cam-zoom-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${active ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-white'}`;
+        });
+
+        const video = document.getElementById('liveCameraVideo');
+        if (camStream) {
+          const track = camStream.getVideoTracks()[0];
+          if (track && camHardwareZoomSupported) {
+            try {
+              const caps = track.getCapabilities();
+              const maxZ = (caps.zoom && caps.zoom.max) || 2;
+              const targetZ = Math.min(maxZ, Math.max((caps.zoom && caps.zoom.min) || 1, camZoom));
+              track.applyConstraints({ advanced: [{ zoom: targetZ }] }).catch(() => {});
+              video.style.transform = 'scale(1)';
+              return;
+            } catch (e) {}
+          }
+        }
+        if (video) {
+          video.style.transform = `scale(${camZoom})`;
+        }
+      }
+
+      function onCameraDecoded(rawValue) {
+        const popupOpen = !document.getElementById('unlistedPopupModal').classList.contains('hidden');
+        if (popupOpen) return;
+        const code = normalizeBarcode(rawValue);
+        if (!code) return;
+        const now = Date.now();
+        if (code === ui.lastCameraCode && now - ui.lastCameraTime < 1800) return;
+        ui.lastCameraCode = code;
+        ui.lastCameraTime = now;
+        processScan(code, 'camera');
+      }
+
+      // Camera Scanner Control (Full HD getUserMedia + ZBar WASM)
       async function toggleCamera() {
         unlockAudio();
         const container = document.getElementById('cameraContainer');
@@ -1369,8 +1567,8 @@
           return;
         }
 
-        if (typeof Html5Qrcode === 'undefined') {
-          notice.textContent = 'ไม่สามารถโหลดตัวสแกนกล้องได้ กรุณาลองกด "📸 ถ่ายรูป" หรือพิมพ์เลขพัสดุแทนครับ';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          notice.textContent = 'เบราว์เซอร์ไม่รองรับการเปิดกล้องสด (ลองเปิดผ่านลิงก์ HTTPS หรือกด "📸 ถ่ายรูป" แทนครับ)';
           notice.classList.remove('hidden');
           return;
         }
@@ -1384,41 +1582,95 @@
         stickyBtn.classList.replace('bg-[#d32f2f]', 'bg-slate-800');
 
         try {
-          if (!html5QrCode) {
-            try {
-              html5QrCode = new Html5Qrcode('reader', { experimentalFeatures: { useBarCodeDetectorIfSupported: true } });
-            } catch (e) {
-              html5QrCode = new Html5Qrcode('reader');
-            }
+          const det = await getBarcodeDetector();
+          if (!det) {
+            throw new Error('ไม่สามารถโหลดตัวถอดรหัสบาร์โค้ดได้');
           }
+
+          camStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            },
+            audio: false
+          });
+
+          const video = document.getElementById('liveCameraVideo');
+          video.srcObject = camStream;
+          await video.play();
           ui.cameraActive = true;
-          await html5QrCode.start(
-            { facingMode: 'environment' },
-            {
-              fps: 10,
-              qrbox: (viewW, viewH) => ({
-                width: Math.min(340, Math.floor(viewW * 0.92)),
-                height: Math.min(160, Math.floor(viewH * 0.55))
-              })
-            },
-            (decodedText) => {
-              const popupOpen = !document.getElementById('unlistedPopupModal').classList.contains('hidden');
-              if (popupOpen) return;
-              const code = normalizeBarcode(decodedText);
-              const now = Date.now();
-              if (code === ui.lastCameraCode && now - ui.lastCameraTime < 1800) return;
-              ui.lastCameraCode = code;
-              ui.lastCameraTime = now;
-              processScan(code, 'camera');
-            },
-            () => {}
-          );
+
+          const track = camStream.getVideoTracks()[0];
+          const torchBtn = document.getElementById('btnTorchToggle');
+          camTorchOn = false;
+          camHardwareZoomSupported = false;
+          if (track && typeof track.getCapabilities === 'function') {
+            try {
+              const caps = track.getCapabilities();
+              camHardwareZoomSupported = Boolean(caps && caps.zoom);
+              if (caps && caps.torch) {
+                torchBtn.classList.remove('hidden');
+              } else {
+                torchBtn.classList.add('hidden');
+              }
+            } catch (e) {
+              torchBtn.classList.add('hidden');
+            }
+          } else {
+            torchBtn.classList.add('hidden');
+          }
+
+          applyCameraZoom(1);
+
+          const liveCropCanvas = document.createElement('canvas');
+          const liveCtx = liveCropCanvas.getContext('2d', { willReadFrequently: true });
+          camTickCount = 0;
+
+          camScanTimer = setInterval(async () => {
+            if (!ui.cameraActive || camBusy || video.readyState < 2) return;
+            const popupOpen = !document.getElementById('unlistedPopupModal').classList.contains('hidden');
+            if (popupOpen) return;
+
+            camBusy = true;
+            camTickCount += 1;
+            try {
+              if (camZoom === 1 && camTickCount % 2 === 1) {
+                const hit = await detectWithDetector(det, video);
+                if (hit) {
+                  onCameraDecoded(hit);
+                  return;
+                }
+              }
+
+              const vw = video.videoWidth;
+              const vh = video.videoHeight;
+              if (vw && vh) {
+                const effZoom = camHardwareZoomSupported ? 1 : camZoom;
+                const cropW = Math.max(100, Math.round((vw * 0.84) / effZoom));
+                const cropH = Math.max(60, Math.round((vh * 0.40) / effZoom));
+                const sx = Math.round((vw - cropW) / 2);
+                const sy = Math.round((vh - cropH) / 2);
+                const scale = Math.min(1, 1400 / Math.max(cropW, cropH));
+                liveCropCanvas.width = Math.round(cropW * scale);
+                liveCropCanvas.height = Math.round(cropH * scale);
+                liveCtx.drawImage(video, sx, sy, cropW, cropH, 0, 0, liveCropCanvas.width, liveCropCanvas.height);
+
+                const targetCanvas = (camTickCount % 3 === 0)
+                  ? createHighContrastCanvas(liveCropCanvas)
+                  : liveCropCanvas;
+                const hitCrop = await detectWithDetector(det, targetCanvas);
+                if (hitCrop) onCameraDecoded(hitCrop);
+              }
+            } finally {
+              camBusy = false;
+            }
+          }, 160);
+
           scrollToCameraViewport();
           setTimeout(scrollToCameraViewport, 150);
         } catch (err) {
-          ui.cameraActive = false;
-          container.classList.add('hidden');
-          resetCameraButtons();
+          await stopCamera();
           const isInsecure = location.protocol === 'file:' || (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
           notice.textContent = isInsecure
             ? 'เปิดกล้องสดไม่ได้เนื่องจากหน้าเว็บเปิดผ่าน HTTP/ไฟล์ตรง — กรุณาเปิดผ่านลิงก์ถาวร HTTPS หรือกด "📸 ถ่ายรูป" แทนครับ'
@@ -1441,38 +1693,74 @@
 
       async function stopCamera() {
         ui.cameraActive = false;
+        camBusy = false;
+        if (camScanTimer) { clearInterval(camScanTimer); camScanTimer = null; }
+        if (camStream) {
+          camStream.getTracks().forEach(t => t.stop());
+          camStream = null;
+        }
+        const video = document.getElementById('liveCameraVideo');
+        if (video) {
+          video.srcObject = null;
+          video.style.transform = 'scale(1)';
+        }
+        camZoom = 1;
+        camTorchOn = false;
         document.getElementById('cameraContainer').classList.add('hidden');
         resetCameraButtons();
-        if (html5QrCode) {
-          try { await html5QrCode.stop(); } catch (e) {}
+      }
+
+      async function handleLiveFrameSnap() {
+        unlockAudio();
+        const video = document.getElementById('liveCameraVideo');
+        if (!video || !ui.cameraActive || video.readyState < 2) {
+          showToast('กรุณาเปิดกล้องก่อนครับ');
+          return;
+        }
+        showToast('⚡ กำลังจับภาพความละเอียดสูงเพื่อสแกน...');
+        const decoded = await decodeBarcodeFromDrawable(video, video.videoWidth, video.videoHeight);
+        if (decoded) {
+          onCameraDecoded(decoded);
+        } else {
+          showToast('ยังไม่พบบาร์โค้ด ลองขยับให้บาร์โค้ดชัดขึ้นแล้วกดอีกครั้ง');
         }
       }
 
       async function handleSnapshotFile(file) {
         if (!file) return;
+        unlockAudio();
         const notice = document.getElementById('cameraNotice');
         notice.classList.add('hidden');
-        showToast('กำลังอ่านบาร์โค้ดจากรูปภาพ...');
+        showToast('กำลังอ่านบาร์โค้ดจากรูปภาพ (Multi-Pass)...');
 
         let decoded = '';
-        if (typeof Html5Qrcode !== 'undefined') {
-          try {
-            const snapQr = new Html5Qrcode('snapReader');
-            decoded = await snapQr.scanFile(file, false);
-          } catch (e) { decoded = ''; }
-        }
-        if (!decoded && 'BarcodeDetector' in window) {
-          try {
+        try {
+          if (typeof createImageBitmap === 'function') {
             const bmp = await createImageBitmap(file);
-            const det = new window.BarcodeDetector();
-            const hits = await det.detect(bmp);
-            if (hits && hits.length) decoded = hits[0].rawValue;
-          } catch (e) { decoded = ''; }
+            decoded = await decodeBarcodeFromDrawable(bmp, bmp.width, bmp.height);
+            if (bmp.close) bmp.close();
+          } else {
+            const url = URL.createObjectURL(file);
+            try {
+              const img = await new Promise((res, rej) => {
+                const im = new Image();
+                im.onload = () => res(im);
+                im.onerror = rej;
+                im.src = url;
+              });
+              decoded = await decodeBarcodeFromDrawable(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+            } finally {
+              URL.revokeObjectURL(url);
+            }
+          }
+        } catch (e) {
+          decoded = '';
         }
+
         if (decoded) {
           processScan(decoded, 'camera');
         } else {
-          notice.textContent = 'ไม่พบบาร์โค้ดในภาพที่ถ่าย กรุณาถ่ายให้เห็นแถบบาร์โค้ดชัดเจนขึ้นหรือพิมพ์เลขพัสดุครับ';
+          notice.textContent = 'ไม่พบบาร์โค้ดในภาพที่ถ่าย ลองถ่ายใกล้ขึ้นให้แถบบาร์โค้ดคมชัดและไม่สะท้อนแสงครับ';
           notice.classList.remove('hidden');
           showToast('อ่านบาร์โค้ดจากภาพไม่สำเร็จ');
         }
@@ -1876,6 +2164,23 @@
 
         document.getElementById('btnToggleCamera').addEventListener('click', toggleCamera);
         document.getElementById('btnStickyScan').addEventListener('click', toggleCamera);
+        document.getElementById('btnLiveFrameSnap').addEventListener('click', handleLiveFrameSnap);
+        document.querySelectorAll('.cam-zoom-btn').forEach(btn => {
+          btn.addEventListener('click', () => applyCameraZoom(btn.getAttribute('data-zoom')));
+        });
+        document.getElementById('btnTorchToggle').addEventListener('click', async () => {
+          if (!camStream) return;
+          const track = camStream.getVideoTracks()[0];
+          if (!track) return;
+          camTorchOn = !camTorchOn;
+          try {
+            await track.applyConstraints({ advanced: [{ torch: camTorchOn }] });
+            document.getElementById('btnTorchToggle').textContent = camTorchOn ? '🔦 ปิดไฟ' : '🔦 ไฟฉาย';
+          } catch (e) {
+            camTorchOn = false;
+            showToast('อุปกรณ์ไม่รองรับเปิดไฟฉายผ่านเว็บ');
+          }
+        });
         document.getElementById('btnSnapBarcode').addEventListener('click', () => { unlockAudio(); document.getElementById('cameraSnapInput').click(); });
         document.getElementById('btnStickySnap').addEventListener('click', () => { unlockAudio(); document.getElementById('cameraSnapInput').click(); });
         document.getElementById('btnStickyTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
