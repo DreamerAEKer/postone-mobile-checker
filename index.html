@@ -41,37 +41,31 @@
 </head>
 <body class="bg-slate-200 text-slate-800 antialiased">
 
-  <!-- Mobile App Container -->
   <div class="max-w-md mx-auto min-h-screen bg-slate-100 flex flex-col justify-between shadow-2xl relative">
 
     <!-- Top Sticky Header -->
     <header class="sticky top-0 z-30 bg-white shadow-sm border-b border-slate-200">
-      <!-- App Title Bar -->
       <div class="bg-[#d32f2f] text-white px-3 py-2.5 flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 flex-1 min-w-0">
           <span class="text-xl leading-none shrink-0">📦</span>
           <div class="min-w-0 flex-1">
             <h1 class="text-sm font-bold leading-tight truncate">รีเช็คพัสดุรับฝาก (PostOne)</h1>
-            <p class="text-[10px] text-red-100 leading-tight truncate">เช็คงานจริงเทียบระบบตามวันที่</p>
+            <p class="text-[10px] text-red-100 leading-tight truncate">ดึงรายงาน + สแกนเทียบของจริงในหน้าเดียว</p>
           </div>
         </div>
         <div class="flex items-center gap-1 shrink-0">
-          <button id="btnOpenMobileModal" type="button" title="เปิดบนมือถือ"
+          <button id="btnOpenMobileModal" type="button" title="QR Code มือถือ"
             class="bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold px-2 py-1.5 rounded-lg transition">
-            📱 มือถือ
+            📱 QR
           </button>
           <button id="btnSoundToggle" type="button" title="เปิด/ปิดเสียง"
             class="bg-white/15 hover:bg-white/25 active:scale-95 text-white text-[11px] font-semibold px-2 py-1.5 rounded-lg transition">
             🔊 เสียง
           </button>
-          <button id="btnResetSample" type="button"
-            class="bg-white text-[#d32f2f] hover:bg-red-50 active:scale-95 text-[11px] font-bold px-2 py-1.5 rounded-lg shadow-sm transition">
-            🔄 ตัวอย่าง
-          </button>
         </div>
       </div>
 
-      <!-- Date Picker & Customer Filter Bar -->
+      <!-- Date Picker, Customer Filter & Quick Date Chips -->
       <div class="px-3 py-2 bg-slate-50 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <div class="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2 py-1 min-w-0">
@@ -81,390 +75,299 @@
           </div>
           <select id="customerFilter"
             class="w-full min-w-0 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 truncate">
-            <option value="ALL">ทุกลูกค้า / ทุกรอบ</option>
+            <option value="ALL">ทุกร้าน / ทุกรอบ</option>
           </select>
         </div>
 
-        <!-- Quick-Select Date Chips -->
-        <div id="dateChips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-          <!-- Populated dynamically -->
-        </div>
+        <div id="dateChips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
       </div>
     </header>
 
-    <!-- Main Scrollable Content -->
+    <!-- Unified Single-Screen Content -->
     <main class="flex-1 px-3 py-3 space-y-3 pb-24 overflow-y-auto">
 
-      <!-- Localhost Dismissible Banner -->
+      <!-- Localhost Mobile QR Banner -->
       <div id="localhostMobileBanner" class="hidden bg-indigo-50 border border-indigo-200 rounded-2xl p-3 flex items-center justify-between gap-2">
         <button id="btnBannerOpenQr" type="button" class="text-left flex-1 min-w-0">
           <div class="text-xs font-bold text-indigo-900">📱 สแกน QR Code เพื่อเปิดบนมือถือ</div>
-          <div class="text-[11px] text-indigo-700">แตะที่นี่เพื่อแสดงลิงก์ HTTPS และ QR Code สำหรับมือถือ</div>
+          <div class="text-[11px] text-indigo-700">แตะเพื่อแสดงลิงก์ถาวร HTTPS และ QR Code</div>
         </button>
         <button id="btnDismissMobileBanner" type="button" class="text-indigo-400 hover:text-indigo-700 text-sm font-bold px-2 py-1 shrink-0">✕</button>
       </div>
 
-      <!-- Scoreboard Summary Card (Shown on Scan & List tabs) -->
-      <section id="scoreboardCard" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2.5">
+      <!-- STEP 1: Access PostOne & Paste Report -->
+      <section id="step1Section" class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <h2 class="text-xs font-extrabold text-slate-800">1️⃣ ดึงรายงานจาก PostOne (ประจำวันที่เลือก)</h2>
+            <p class="text-[11px] text-slate-500 truncate" id="step1StatusText">เปิดรายงาน → เลือกทั้งหมด → คัดลอก แล้วกดวาง</p>
+          </div>
+          <select id="postoneNodeSelect" title="รหัสเครื่อง PostOne"
+            class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700 shrink-0">
+            <option value="W08">W08</option>
+            <option value="W04">W04</option>
+            <option value="W01">W01</option>
+            <option value="W02">W02</option>
+            <option value="W03">W03</option>
+            <option value="W05">W05</option>
+            <option value="W06">W06</option>
+            <option value="W07">W07</option>
+            <option value="W09">W09</option>
+            <option value="W10">W10</option>
+            <option value="HOME">หน้าหลัก</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <a id="postonePrimaryLink" href="https://postone.thailandpost.com/W08/m/report" target="_blank" rel="noopener noreferrer"
+            class="py-3 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 text-center transition no-underline">
+            <span>🌐 เปิดเว็บ PostOne</span>
+          </a>
+          <button id="btnQuickClipboardImport" type="button"
+            class="py-3 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-extrabold text-xs shadow-sm flex items-center justify-center gap-1.5 text-center transition">
+            <span>📲 วางรายงานที่คัดลอก</span>
+          </button>
+        </div>
+
+        <!-- Expandable Manual Paste / Options Drawer -->
+        <div class="flex items-center justify-between pt-0.5">
+          <a href="https://postone.thailandpost.com/" target="_blank" rel="noopener noreferrer"
+            class="text-[11px] font-bold text-blue-600 hover:underline">
+            🔑 หน้าล็อกอินหลัก PostOne
+          </a>
+          <button id="btnToggleManualImport" type="button"
+            class="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg transition">
+            ✏️ วางเอง / ล้างข้อมูล / ตั้งค่า ▾
+          </button>
+        </div>
+
+        <div id="manualImportDrawer" class="hidden pt-2 border-t border-slate-100 space-y-2.5">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label for="importDate" class="block text-[11px] font-bold text-slate-600 mb-1">วันที่นำเข้า</label>
+              <input id="importDate" type="date"
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-bold" />
+            </div>
+            <div>
+              <label for="importCustomer" class="block text-[11px] font-bold text-slate-600 mb-1">ชื่อร้าน (ถ้าไม่พบในรายงาน)</label>
+              <input id="importCustomer" type="text" placeholder="เช่น 10wheels / CJ_M048"
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2 py-1.5 text-xs" />
+            </div>
+          </div>
+
+          <label class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-2 cursor-pointer">
+            <input id="importReplaceDate" type="checkbox" checked class="rounded text-red-600 focus:ring-red-500" />
+            <span class="text-[11px] font-bold text-amber-900">🔄 ล้างของเดิมของวันนี้แล้วนำเข้าทับ (แนะนำ)</span>
+          </label>
+
+          <textarea id="importText" rows="4"
+            placeholder="แตะค้างในช่องนี้แล้วกด 'วาง (Paste)' ข้อมูลจากหน้า PostOne (/m/report)..."
+            class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+
+          <div class="flex gap-2">
+            <button id="btnRunImport" type="button"
+              class="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold text-xs transition">
+              📥 นำเข้าข้อความนี้
+            </button>
+            <button id="btnDeleteSelectedDate" type="button"
+              class="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs transition">
+              🗑️ ล้างวันนี้
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 text-[11px]">
+            <label class="text-slate-600 font-semibold cursor-pointer">
+              📁 หรือเลือกไฟล์ CSV/TXT:
+              <input id="importFile" type="file" accept=".csv,.txt,.json" class="hidden" />
+              <span class="underline text-blue-600 font-bold ml-1">เลือกไฟล์</span>
+            </label>
+            <button id="btnResetSample" type="button" class="text-slate-500 hover:text-slate-800 font-bold">
+              🔄 โหลดข้อมูลตัวอย่าง
+            </button>
+          </div>
+
+          <div id="importFeedback" class="hidden text-xs rounded-xl p-2.5 font-semibold"></div>
+
+          <!-- Bookmarklet 1-Click Auto-Send Box -->
+          <div class="bg-slate-800 text-slate-100 rounded-xl p-3 space-y-2">
+            <div class="text-xs font-bold">⚡ ปุ่มลัดส่งข้อมูลจากหน้า PostOne เข้าแอปอัตโนมัติ</div>
+            <p class="text-[10px] text-slate-300 leading-relaxed">
+              คัดลอกโค้ดไปสร้าง Bookmark บน Chrome/Safari ชื่อ <b class="text-white">ส่งเข้าPostOneรีเช็ค</b> — เมื่อเปิดหน้า <code class="bg-slate-700 px-1 rounded">/m/report</code> แล้วกด Bookmark นี้ ระบบจะดึงรายการส่งกลับมาเปิดแอปนี้ให้อัตโนมัติ
+            </p>
+            <button id="btnCopyBookmarklet" type="button"
+              class="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold transition">
+              📋 คัดลอกโค้ด Bookmarklet ส่งข้อมูลอัตโนมัติ
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scoreboard Summary Card -->
+      <section id="scoreboardCard" class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-500 uppercase tracking-wide" id="scoreboardTitle">
-            สรุปยอดประจำวัน
-          </span>
+          <span class="text-xs font-bold text-slate-600" id="scoreboardTitle">สรุปยอดประจำวัน</span>
           <span class="text-xs font-extrabold text-slate-700" id="progressPercentLabel">0%</span>
         </div>
 
-        <!-- 4 Big Stat Boxes -->
-        <div class="grid grid-cols-4 gap-2 text-center">
-          <div class="bg-slate-50 border border-slate-200 rounded-xl py-2 px-1">
+        <div class="grid grid-cols-4 gap-1.5 text-center">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-1">
             <div class="text-lg font-extrabold text-slate-700 leading-tight" id="statTotal">0</div>
-            <div class="text-[11px] font-semibold text-slate-500 mt-0.5">ในระบบ</div>
+            <div class="text-[10px] font-bold text-slate-500">ในรายงาน</div>
           </div>
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl py-2 px-1">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl py-1.5 px-1">
             <div class="text-lg font-extrabold text-emerald-600 leading-tight" id="statVerified">0</div>
-            <div class="text-[11px] font-semibold text-emerald-700 mt-0.5">เช็คแล้ว</div>
+            <div class="text-[10px] font-bold text-emerald-700">เช็คแล้ว</div>
           </div>
-          <div class="bg-amber-50 border border-amber-200 rounded-xl py-2 px-1">
+          <div class="bg-amber-50 border border-amber-200 rounded-xl py-1.5 px-1">
             <div class="text-lg font-extrabold text-amber-600 leading-tight" id="statPending">0</div>
-            <div class="text-[11px] font-semibold text-amber-700 mt-0.5">ค้างเช็ค</div>
+            <div class="text-[10px] font-bold text-amber-700">ค้างเช็ค</div>
           </div>
-          <div class="bg-red-50 border border-red-200 rounded-xl py-2 px-1">
+          <div class="bg-red-50 border border-red-200 rounded-xl py-1.5 px-1">
             <div class="text-lg font-extrabold text-red-600 leading-tight" id="statExtra">0</div>
-            <div class="text-[11px] font-semibold text-red-700 mt-0.5">เกินระบบ</div>
+            <div class="text-[10px] font-bold text-red-700">ไม่มีในรายงาน</div>
           </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
           <div id="progressBarFill" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
       </section>
 
-      <!-- TAB 1: SCAN & VERIFY -->
-      <section id="tabScan" class="space-y-3">
-
-        <!-- Smart PostOne Launcher Section -->
-        <div id="postoneLaunchSection">
-          <!-- State A: No data yet for selected date -> Big Step 1 & 2 Launcher Card -->
-          <div id="postoneLaunchExpanded" class="hidden bg-white rounded-2xl p-4 shadow-md border-2 border-blue-500 space-y-2.5 animate-pop">
-            <div class="flex items-center justify-between gap-2">
-              <div>
-                <div class="text-sm font-extrabold text-slate-900">📥 ยังไม่มีข้อมูลของวันที่เลือก</div>
-                <div class="text-[11px] text-slate-500">กดปุ่มแรกเพื่อเปิดเว็บ PostOne แล้วก๊อปปี้รายงานมาวางได้เลย</div>
-              </div>
-              <select id="postoneNodeSelect" title="เลือกเครื่อง/รหัส PostOne"
-                class="bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700 shrink-0">
-                <option value="W08">W08</option>
-                <option value="W04">W04</option>
-                <option value="W01">W01</option>
-                <option value="W02">W02</option>
-                <option value="W03">W03</option>
-                <option value="W05">W05</option>
-                <option value="W06">W06</option>
-                <option value="W07">W07</option>
-                <option value="W09">W09</option>
-                <option value="W10">W10</option>
-                <option value="HOME">หน้าหลัก</option>
-              </select>
-            </div>
-
-            <a id="postonePrimaryLink" href="https://postone.thailandpost.com/W08/m/report" target="_blank" rel="noopener noreferrer"
-              class="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-extrabold text-sm shadow-md flex items-center justify-center gap-2 transition no-underline">
-              <span>🌐 1. เปิดเว็บ PostOne (ไปก๊อปปี้ข้อมูลรายงาน)</span>
-            </a>
-
-            <div class="flex items-center justify-between gap-2">
-              <a href="https://postone.thailandpost.com/" target="_blank" rel="noopener noreferrer"
-                class="text-[11px] font-bold text-blue-600 hover:underline">
-                🔑 เปิดหน้าล็อกอินหลัก PostOne
-              </a>
-              <span class="text-[10px] text-slate-400" id="postoneNodeHint">ไปที่ /W08/m/report</span>
-            </div>
-
-            <button id="btnQuickClipboardImportEmpty" type="button"
-              class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition">
-              <span>📲 2. ดึงข้อมูลที่เพิ่งก๊อปปี้เข้าวันที่เลือกทันที</span>
-            </button>
-          </div>
-
-          <!-- State B: Data already loaded -> Compact single-row quick action bar -->
-          <div id="postoneLaunchCompact" class="grid grid-cols-2 gap-2">
-            <a id="postoneCompactLink" href="https://postone.thailandpost.com/W08/m/report" target="_blank" rel="noopener noreferrer"
-              class="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-50 active:scale-[0.99] border border-slate-300 text-slate-700 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition no-underline">
-              <span>🌐 เปิด PostOne</span>
-            </a>
-            <button id="btnQuickClipboardImport" type="button"
-              class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition">
-              <span>📲 ดึงข้อมูลที่ก๊อปปี้เพิ่ม</span>
-            </button>
-          </div>
+      <!-- STEP 2: Camera Scanner + Barcode Input (Always right above list) -->
+      <section id="cameraCard" class="bg-white rounded-2xl p-3.5 shadow-sm border-2 border-red-200 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-extrabold text-slate-800">2️⃣ สแกนเช็คพัสดุจริงเทียบรายงาน</h2>
+          <span class="text-[10px] text-slate-400">สแกนหรือกดยืนยันมือได้</span>
         </div>
 
-        <!-- Camera Scanner Card -->
-        <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-3">
+        <div class="flex gap-2">
           <button id="btnToggleCamera" type="button"
-            class="w-full py-3.5 px-4 rounded-xl bg-[#d32f2f] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-base shadow-md flex items-center justify-center gap-2 transition">
-            <span>📷 เปิดกล้องมือถือสแกนบาร์โค้ด</span>
+            class="flex-1 py-3.5 px-3 rounded-xl bg-[#d32f2f] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-sm shadow-md flex items-center justify-center gap-1.5 transition">
+            <span>📷 เปิดกล้องสแกนบาร์โค้ด</span>
           </button>
-
-          <!-- Native Camera Snapshot Fallback -->
           <input type="file" id="cameraSnapInput" accept="image/*" capture="environment" class="hidden" />
-          <button id="btnSnapBarcode" type="button"
-            class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-[0.99] border border-slate-300 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition">
-            <span>📸 ถ่ายรูปสแกนบาร์โค้ด (กรณีเปิดผ่าน HTTP)</span>
+          <button id="btnSnapBarcode" type="button" title="ถ่ายรูปบาร์โค้ด"
+            class="py-3.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 text-slate-800 font-bold text-xs shrink-0 transition">
+            📸 ถ่ายรูป
           </button>
-          <div id="snapReader" class="hidden"></div>
+        </div>
+        <div id="snapReader" class="hidden"></div>
 
-          <!-- Live Camera Container -->
-          <div id="cameraContainer" class="hidden space-y-2">
-            <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[220px] flex items-center justify-center">
-              <div id="reader" class="w-full"></div>
-            </div>
-            <p class="text-[11px] text-center text-slate-500">
-              ส่องบาร์โค้ดเลขพัสดุ (13 หลัก) หรือ QR Code ในกรอบ ระบบจะเช็คให้อัตโนมัติ
-            </p>
+        <!-- Live Camera Viewport -->
+        <div id="cameraContainer" class="hidden space-y-1.5">
+          <div class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[210px] flex items-center justify-center">
+            <div id="reader" class="w-full"></div>
           </div>
-
-          <div id="cameraNotice" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5 leading-relaxed"></div>
-
-          <!-- Quick Manual / Bluetooth Scanner Input -->
-          <div class="pt-1">
-            <label for="manualInput" class="block text-xs font-bold text-slate-600 mb-1.5">
-              ⌨️ ยิงด้วยปืนสแกนบลูทูธ หรือพิมพ์เลขพัสดุ
-            </label>
-            <form id="manualForm" class="flex gap-2">
-              <input id="manualInput" type="text" autocomplete="off" autocapitalize="characters"
-                placeholder="พิมพ์หรือยิงเลขพัสดุ 13 หลัก เช่น EF123456789TH"
-                class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-mono uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500" />
-              <button type="submit"
-                class="bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold text-sm px-4 rounded-xl shrink-0 transition">
-                ตกลง
-              </button>
-            </form>
-          </div>
+          <p class="text-[11px] text-center text-slate-500">
+            ส่องบาร์โค้ดเลขพัสดุ (13 หลัก) ในกรอบ ระบบจะตรวจเทียบกับรายงานให้อัตโนมัติ
+          </p>
         </div>
 
-        <!-- Big Instant Result Banner -->
-        <div id="lastScanBanner" class="hidden rounded-2xl p-4 shadow-md border-2 animate-pop">
-          <!-- Populated dynamically -->
-        </div>
+        <div id="cameraNotice" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5 leading-relaxed"></div>
 
-        <!-- 1-Tap Simulation Bar -->
-        <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-600">🧪 ปุ่มจำลองการยิงกล้องเพื่อทดสอบ UI</span>
-            <span class="text-[10px] text-slate-400">กดลองได้ทันที</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
+        <!-- Quick Manual / Bluetooth Barcode Input -->
+        <form id="manualForm" class="flex gap-2">
+          <input id="manualInput" type="text" autocomplete="off" autocapitalize="characters"
+            placeholder="พิมพ์หรือยิงเลขพัสดุ เช่น EM876427060TH"
+            class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500" />
+          <button type="submit"
+            class="bg-slate-800 hover:bg-slate-900 active:scale-95 text-white font-bold text-xs px-4 rounded-xl shrink-0 transition">
+            เช็ค
+          </button>
+        </form>
+
+        <!-- Big Instant Scan Result Banner (with Click-to-Track) -->
+        <div id="lastScanBanner" class="hidden rounded-2xl p-3.5 shadow-md border-2 animate-pop"></div>
+
+        <!-- Collapsible Test Simulation -->
+        <details class="pt-1">
+          <summary class="text-[11px] font-bold text-slate-400 cursor-pointer select-none">
+            🧪 ทดลองจำลองยิงสแกน (สำหรับทดสอบ)
+          </summary>
+          <div class="grid grid-cols-2 gap-1.5 mt-2">
             <button type="button" data-sim="matched"
-              class="sim-btn bg-emerald-50 hover:bg-emerald-100 active:scale-95 border border-emerald-200 text-emerald-800 text-xs font-bold py-2.5 px-2 rounded-xl text-left transition">
-              🟢 ลองยิง: พัสดุตรงในระบบ
+              class="sim-btn bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold py-2 px-2 rounded-xl text-left">
+              🟢 ยิง: ตรงในรายงาน
             </button>
             <button type="button" data-sim="duplicate"
-              class="sim-btn bg-amber-50 hover:bg-amber-100 active:scale-95 border border-amber-200 text-amber-800 text-xs font-bold py-2.5 px-2 rounded-xl text-left transition">
-              🟡 ลองยิง: พัสดุซ้ำ
+              class="sim-btn bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold py-2 px-2 rounded-xl text-left">
+              🟡 ยิง: พัสดุซ้ำ
             </button>
             <button type="button" data-sim="wrong_date"
-              class="sim-btn bg-orange-50 hover:bg-orange-100 active:scale-95 border border-orange-200 text-orange-800 text-xs font-bold py-2.5 px-2 rounded-xl text-left transition">
-              🟠 ลองยิง: พัสดุผิดวัน (ของเมื่อวาน)
+              class="sim-btn bg-orange-50 border border-orange-200 text-orange-800 text-[11px] font-bold py-2 px-2 rounded-xl text-left">
+              🟠 ยิง: ผิดวัน
             </button>
             <button type="button" data-sim="extra"
-              class="sim-btn bg-red-50 hover:bg-red-100 active:scale-95 border border-red-200 text-red-800 text-xs font-bold py-2.5 px-2 rounded-xl text-left transition">
-              🔴 ลองยิง: ไม่มีในระบบ (ของเกิน)
+              class="sim-btn bg-red-50 border border-red-200 text-red-800 text-[11px] font-bold py-2 px-2 rounded-xl text-left">
+              🔴 ยิง: ไม่มีในรายงาน
             </button>
           </div>
-        </div>
-
-        <!-- Recent Scans Mini-Feed -->
-        <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xs font-bold text-slate-600">🕒 ประวัติการยิงล่าสุด (5 รายการ)</h2>
-            <button id="btnClearRecent" type="button" class="text-[11px] text-slate-400 hover:text-slate-600">ล้างประวัติ</button>
-          </div>
-          <div id="recentFeed" class="space-y-1.5">
-            <p class="text-xs text-slate-400 text-center py-3">ยังไม่มีการสแกนในรอบนี้</p>
-          </div>
-        </div>
+        </details>
       </section>
 
-      <!-- TAB 2: RECONCILIATION LIST -->
-      <section id="tabList" class="hidden space-y-3">
+      <!-- DEDICATED ALERT SECTION: Unlisted Tracking Numbers ("ไม่มีในรายงาน") -->
+      <section id="unlistedAlertSection" class="hidden bg-red-50 rounded-2xl p-3.5 shadow-sm border-2 border-red-400 space-y-2 animate-pop">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-extrabold text-red-800" id="unlistedTitle">🚨 พบเลขที่ไม่มีในรายงาน (0 ชิ้น)</h2>
+            <p class="text-[11px] text-red-700">แตะที่เลขพัสดุเพื่อคัดลอกและเปิดหน้า Track ตรวจสอบสถานะ</p>
+          </div>
+          <button id="btnCopyExtras" type="button"
+            class="shrink-0 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm transition">
+            📋 คัดลอกทั้งหมด
+          </button>
+        </div>
+        <div id="unlistedListContainer" class="space-y-1.5"></div>
+      </section>
 
-        <!-- 4 Filter Pills -->
+      <!-- STEP 3: Report Items List (Verify Manually or Click Number to Track) -->
+      <section class="space-y-2">
+        <div class="flex items-center justify-between px-1">
+          <h2 class="text-xs font-extrabold text-slate-700">3️⃣ รายการในรายงาน (แตะเลขพัสดุเพื่อ Track ได้)</h2>
+        </div>
+
+        <!-- Compact Filter Pills -->
         <div class="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
-          <button type="button" data-filter="pending"
-            class="list-pill py-2 px-1 rounded-xl text-xs font-bold transition">
-            ค้างเช็ค (0)
-          </button>
-          <button type="button" data-filter="verified"
-            class="list-pill py-2 px-1 rounded-xl text-xs font-bold transition">
-            เช็คแล้ว (0)
-          </button>
-          <button type="button" data-filter="extra"
-            class="list-pill py-2 px-1 rounded-xl text-xs font-bold transition">
-            เกินระบบ (0)
-          </button>
-          <button type="button" data-filter="all"
-            class="list-pill py-2 px-1 rounded-xl text-xs font-bold transition">
-            ทั้งหมด (0)
-          </button>
+          <button type="button" data-filter="pending" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ค้างเช็ค (0)</button>
+          <button type="button" data-filter="verified" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">เช็คแล้ว (0)</button>
+          <button type="button" data-filter="extra" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ไม่มีในรายงาน (0)</button>
+          <button type="button" data-filter="all" class="list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition">ทั้งหมด (0)</button>
         </div>
 
-        <!-- Extra Action Bar (e.g. Copy all extra tracking numbers) -->
-        <div id="listTopAction" class="hidden"></div>
+        <div id="itemListContainer" class="space-y-2"></div>
 
-        <!-- Item Cards List -->
-        <div id="itemListContainer" class="space-y-2">
-          <!-- Populated dynamically -->
-        </div>
-
-        <!-- Export / Share Buttons -->
-        <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200 space-y-2">
-          <div class="text-xs font-bold text-slate-600">📤 ส่งออกและแชร์รายงานประจำวัน</div>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btnExportCsv" type="button"
-              class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-3 px-2 rounded-xl shadow-sm transition">
-              📊 ส่งออก Excel CSV
-            </button>
-            <button id="btnCopyLine" type="button"
-              class="bg-[#06c755] hover:bg-green-600 active:scale-95 text-white text-xs font-bold py-3 px-2 rounded-xl shadow-sm transition">
-              📋 คัดลอกสรุปส่ง LINE
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 3: EASY DATA IMPORT -->
-      <section id="tabImport" class="hidden space-y-3">
-
-        <!-- Step 1 & 2: Import Form -->
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
-          <div class="border-b border-slate-100 pb-2">
-            <h2 class="text-base font-bold text-slate-800">📥 นำเข้าข้อมูลจากระบบ PostOne</h2>
-            <p class="text-xs text-slate-500 mt-0.5">เปิดหน้ารายงาน <code class="bg-slate-100 px-1 rounded">/m/report</code> บน PostOne กด <b class="text-slate-700">เลือกทั้งหมด → คัดลอก</b> แล้วมาวางที่นี่ได้เลย (แยกชื่อร้าน/Route/วันที่ให้อัตโนมัติ)</p>
-          </div>
-
-          <!-- Step 0: Quick Launch PostOne -->
-          <div class="grid grid-cols-2 gap-2">
-            <a id="postoneImportLink" href="https://postone.thailandpost.com/W08/m/report" target="_blank" rel="noopener noreferrer"
-              class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition no-underline">
-              <span>🌐 เปิดเว็บ PostOne</span>
-            </a>
-            <a href="https://postone.thailandpost.com/" target="_blank" rel="noopener noreferrer"
-              class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-[0.99] border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition no-underline">
-              <span>🔑 หน้าล็อกอินหลัก</span>
-            </a>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label for="importDate" class="block text-xs font-bold text-slate-600 mb-1">1. วันที่ของข้อมูล</label>
-              <input id="importDate" type="date"
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500" />
-            </div>
-            <div>
-              <label for="importCustomer" class="block text-xs font-bold text-slate-600 mb-1">ชื่อร้าน (ถ้าไม่พบในข้อความ)</label>
-              <input id="importCustomer" type="text" placeholder="เช่น 10wheels / CJ_M048"
-                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500" />
-            </div>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label for="importText" class="text-xs font-bold text-slate-600">
-                2. วางข้อมูลที่ก๊อปปี้มา (รองรับเลขเว้นวรรค EM 8764...)
-              </label>
-              <button id="btnPasteExample" type="button" class="text-[11px] text-red-600 font-bold hover:underline">
-                ใส่ตัวอย่างหน้า /report
-              </button>
-            </div>
-            <button id="btnImportClipboard" type="button"
-              class="w-full mb-2 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-[0.99] border border-blue-200 text-blue-700 font-bold text-xs transition">
-              📲 แตะเพื่อดึงจากคลิปบอร์ดอัตโนมัติ
-            </button>
-            <textarea id="importText" rows="5"
-              placeholder="วางข้อความจากหน้ารายงาน PostOne (/m/report) ที่มีชื่อร้าน, Route, EM 8764 2706 0 TH..."
-              class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-xs font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500"></textarea>
-          </div>
-
-          <label class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 cursor-pointer">
-            <input id="importReplaceDate" type="checkbox" class="rounded text-red-600 focus:ring-red-500" />
-            <span class="text-xs font-bold text-amber-900">🔄 ล้างของเดิมของวันนี้แล้วนำเข้าทับ (แทนที่จะเพิ่มต่อ)</span>
-          </label>
-
-          <div>
-            <label for="importFile" class="block text-xs font-bold text-slate-600 mb-1">
-              หรือเลือกอัปโหลดไฟล์ (.csv / .txt)
-            </label>
-            <input id="importFile" type="file" accept=".csv,.txt,.json"
-              class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300" />
-          </div>
-
-          <button id="btnRunImport" type="button"
-            class="w-full py-3.5 px-4 rounded-xl bg-[#d32f2f] hover:bg-red-700 active:scale-[0.99] text-white font-bold text-sm shadow-md transition">
-            📥 นำเข้าข้อมูลเข้าวันที่เลือก (ซิงค์เข้ามือถือทันที)
+        <!-- Export / Share Report -->
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200 grid grid-cols-2 gap-2">
+          <button id="btnExportCsv" type="button"
+            class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-2.5 px-2 rounded-xl shadow-sm transition">
+            📊 ส่งออก Excel CSV
           </button>
-
-          <div id="importFeedback" class="hidden text-xs rounded-xl p-3 font-semibold"></div>
-
-          <div class="pt-1 border-t border-slate-100 flex justify-between items-center">
-            <span class="text-[11px] text-slate-400">ต้องการลบข้อมูลเฉพาะวันที่เลือก?</span>
-            <button id="btnDeleteSelectedDate" type="button"
-              class="text-xs font-bold text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition">
-              🗑️ ล้างข้อมูลวันนี้
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 3: Bookmarklet Helper Box -->
-        <div class="bg-slate-800 text-slate-100 rounded-2xl p-4 shadow-sm space-y-2.5">
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <h3 class="text-sm font-bold text-white">📱 จบในมือถือ: ปุ่มดูดข้อมูล + เปิดกล้องบนเว็บ PostOne</h3>
-              <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                ใช้บน Chrome มือถือได้ทันที ไม่ว่าลิงก์จะเป็น <code class="bg-slate-700 px-1 rounded">W01</code> - <code class="bg-slate-700 px-1 rounded">W04</code> (บันทึกแยกวันที่ + เปิดกล้องยิงในแท็บ PostOne ได้เลย)
-              </p>
-            </div>
-          </div>
-
-          <ol class="text-xs text-slate-300 space-y-1 list-decimal list-inside leading-relaxed">
-            <li>กดคัดลอกโค้ดด้านล่าง แล้วสร้างเป็น Bookmark ใน Chrome มือถือ (ตั้งชื่อ เช่น <b class="text-white">รีเช็คPostOne</b>)</li>
-            <li>ล็อกอินเข้าเว็บ PostOne บนมือถือ แล้วพิมพ์ชื่อ Bookmark ในช่อง URL เพื่อกดเรียกปุ่มนี้ขึ้นมา</li>
-            <li>กด <b class="text-emerald-300">📥 ดูดข้อมูลเข้าวันที่เลือก</b> แล้วกด <b class="text-amber-300">📷 เปิดกล้องยิงเช็ค</b> ในหน้านั้นได้เลย หรือคัดลอกมาวางในแอปนี้ก็ได้</li>
-          </ol>
-
-          <div class="bg-slate-900 rounded-xl p-2.5 text-[10px] font-mono text-emerald-300 break-all max-h-20 overflow-y-auto select-all" id="bookmarkletCodeBox"></div>
-
-          <button id="btnCopyBookmarklet" type="button"
-            class="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold transition">
-            📋 คัดลอกโค้ดปุ่มดูดข้อมูล + สแกนบน PostOne
+          <button id="btnCopyLine" type="button"
+            class="bg-[#06c755] hover:bg-green-600 active:scale-95 text-white text-xs font-bold py-2.5 px-2 rounded-xl shadow-sm transition">
+            📋 คัดลอกสรุปส่ง LINE
           </button>
         </div>
-
       </section>
 
     </main>
 
-    <!-- Bottom Sticky Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40">
-      <div class="max-w-md mx-auto bg-white border-t border-slate-200 shadow-[0_-4px_15px_rgba(0,0,0,0.06)] grid grid-cols-3 safe-pb">
-        <button type="button" data-tab="scan"
-          class="nav-btn flex flex-col items-center justify-center py-2.5 text-[#d32f2f] transition">
-          <span class="text-xl leading-none">📷</span>
-          <span class="text-xs font-bold mt-1">ยิงเช็คงาน</span>
+    <!-- Sticky Bottom Action Bar: Camera Scan Always Accessible While Scrolling -->
+    <div class="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+      <div class="max-w-md mx-auto bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-4px_15px_rgba(0,0,0,0.08)] px-3 py-2 flex items-center gap-2 safe-pb pointer-events-auto">
+        <button id="btnStickyScan" type="button"
+          class="flex-1 py-2.5 px-3 rounded-xl bg-[#d32f2f] hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-xs shadow flex items-center justify-center gap-1.5 transition">
+          <span>📷 เปิดกล้องสแกนบาร์โค้ด</span>
         </button>
-        <button type="button" data-tab="list"
-          class="nav-btn flex flex-col items-center justify-center py-2.5 text-slate-500 transition relative">
-          <span class="text-xl leading-none">📋</span>
-          <span class="text-xs font-bold mt-1">รายการเช็ค</span>
-          <span id="navPendingBadge" class="hidden absolute top-1.5 right-6 bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none">0</span>
+        <button id="btnStickySnap" type="button"
+          class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 text-slate-800 font-bold text-xs shrink-0 transition">
+          📸 ถ่ายรูป
         </button>
-        <button type="button" data-tab="import"
-          class="nav-btn flex flex-col items-center justify-center py-2.5 text-slate-500 transition">
-          <span class="text-xl leading-none">📥</span>
-          <span class="text-xs font-bold mt-1">นำเข้าข้อมูล</span>
+        <button id="btnStickyTop" type="button" title="เลื่อนขึ้นบน"
+          class="py-2.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-95 border border-blue-200 text-blue-700 font-bold text-xs shrink-0 transition">
+          ⬆️ บน
         </button>
       </div>
-    </nav>
+    </div>
 
   </div>
 
@@ -478,10 +381,10 @@
 
       <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
         <button type="button" id="btnQrModeHttps" class="py-1.5 px-2 rounded-lg text-[11px] font-bold bg-[#d32f2f] text-white shadow-sm transition">
-          🔒 ลิงก์ HTTPS (เปิดกล้องสดได้)
+          🔒 ลิงก์ถาวร HTTPS
         </button>
         <button type="button" id="btnQrModeLan" class="py-1.5 px-2 rounded-lg text-[11px] font-bold text-slate-600 transition">
-          📶 Wi-Fi / Hotspot เดียวกัน
+          📶 Wi-Fi / Hotspot
         </button>
       </div>
 
@@ -491,7 +394,7 @@
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-[11px] font-bold text-slate-600">ลิงก์สำหรับมือถือ (กดคัดลอกส่งเข้า LINE ได้):</label>
+        <label class="block text-[11px] font-bold text-slate-600">ลิงก์สำหรับมือถือ:</label>
         <div class="flex gap-1.5">
           <input id="qrUrlInput" type="text" readonly
             class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-700" />
@@ -515,6 +418,7 @@
       'use strict';
 
       const STORAGE_KEY = 'postone_recheck_mobile_v2';
+      const NODE_STORAGE_KEY = 'postone_node_code_v1';
       const MOBILE_HTTPS_URL = 'https://dreameraeker.github.io/postone-mobile-checker/';
       const MOBILE_LAN_URL = 'http://172.20.10.3:8080';
       const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -526,303 +430,49 @@
         return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]} ${m[5]}` : clean;
       }
 
-      function postOneMobileOverlay() {
-        const old = document.getElementById('po-m-overlay');
-        if (old) { old.remove(); }
-        const KEY = 'po_mobile_recheck_v2';
-        const SYNC_URL = 'https://dreameraeker.github.io/postone-mobile-checker/';
-        const TRK_RE = /[A-Z]{2}\s*\d{4}\s*\d{4}\s*\d\s*[A-Z]{2}|[A-Z]{2}\d{9}[A-Z]{2}/gi;
-        const td = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-        const tmNow = () => new Date().toTimeString().slice(0, 8);
-        const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const fmt = (c) => { const m = String(c || '').replace(/\s+/g, '').toUpperCase().match(/^([A-Z]{2})(\d{4})(\d{4})(\d)([A-Z]{2})$/); return m ? m[1] + ' ' + m[2] + ' ' + m[3] + ' ' + m[4] + ' ' + m[5] : c; };
-        let db = { items: [], extras: [] };
-        try { const raw = localStorage.getItem(KEY); if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.items)) db = { items: p.items, extras: p.extras || [] }; } } catch (e) {}
-        const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
-        const getPageText = () => {
-          const el = document.getElementById('po-m-overlay');
-          const prev = el ? el.style.display : '';
-          if (el) el.style.display = 'none';
-          const txt = document.body.innerText || '';
-          if (el) el.style.display = prev;
-          return txt;
-        };
-        const scrape = () => [...new Set((getPageText().match(TRK_RE) || []).map(x => x.replace(/\s+/g, '').toUpperCase()))];
-        let curDate = td();
-        let camStream = null;
-        let camTimer = null;
-        let qrInst = null;
-        let lastCode = '';
-        let lastTs = 0;
-        let showList = false;
-        let ac = null;
-        const beep = (tp) => {
-          if (navigator.vibrate) navigator.vibrate(tp === 'ok' ? [60] : tp === 'dup' ? [80, 60, 80] : [220]);
-          try {
-            const C = window.AudioContext || window.webkitAudioContext;
-            if (!C) return;
-            if (!ac) ac = new C();
-            if (ac.state === 'suspended') ac.resume();
-            const tone = (f, off, dur) => {
-              const o = ac.createOscillator();
-              const g = ac.createGain();
-              o.frequency.setValueAtTime(f, ac.currentTime + off);
-              g.gain.setValueAtTime(0.18, ac.currentTime + off);
-              g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + off + dur);
-              o.connect(g);
-              g.connect(ac.destination);
-              o.start(ac.currentTime + off);
-              o.stop(ac.currentTime + off + dur);
-            };
-            if (tp === 'ok') tone(1046, 0, 0.14);
-            else if (tp === 'dup') { tone(784, 0, 0.09); tone(784, 0.13, 0.09); }
-            else if (tp === 'wd') { tone(660, 0, 0.12); tone(440, 0.14, 0.18); }
-            else tone(220, 0, 0.3);
-          } catch (e) {}
-        };
-        const ov = document.createElement('div');
-        ov.id = 'po-m-overlay';
-        ov.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(15,23,42,0.75);display:flex;align-items:flex-end;justify-content:center;padding:8px;font-family:sans-serif;';
-        ov.innerHTML = '<div style="background:#fff;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;border-radius:16px;padding:14px;box-sizing:border-box;color:#1e293b;box-shadow:0 12px 35px rgba(0,0,0,0.35);">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px;">' +
-            '<b style="color:#d32f2f;font-size:15px;">📦 รีเช็ค PostOne (จบในมือถือ)</b>' +
-            '<button id="po-m-close" style="border:none;background:#f1f5f9;border-radius:8px;padding:6px 10px;font-weight:bold;cursor:pointer;">✕ ปิด</button>' +
-          '</div>' +
-          '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
-            '<label style="font-size:12px;font-weight:bold;white-space:nowrap;">📅 วันที่:</label>' +
-            '<input id="po-m-date" type="date" value="' + curDate + '" style="flex:1;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;font-weight:bold;">' +
-          '</div>' +
-          '<button id="po-m-pull" style="width:100%;padding:10px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;font-size:13px;cursor:pointer;margin-bottom:10px;"></button>' +
-          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin-bottom:10px;">' +
-            '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 2px;"><div id="po-s-all" style="font-size:16px;font-weight:800;">0</div><div style="font-size:10px;color:#64748b;">ในระบบ</div></div>' +
-            '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:6px 2px;"><div id="po-s-ok" style="font-size:16px;font-weight:800;color:#059669;">0</div><div style="font-size:10px;color:#047857;">เช็คแล้ว</div></div>' +
-            '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:6px 2px;"><div id="po-s-pend" style="font-size:16px;font-weight:800;color:#d97706;">0</div><div style="font-size:10px;color:#b45309;">ค้างเช็ค</div></div>' +
-            '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:6px 2px;"><div id="po-s-ex" style="font-size:16px;font-weight:800;color:#dc2626;">0</div><div style="font-size:10px;color:#b91c1c;">เกินระบบ</div></div>' +
-          '</div>' +
-          '<button id="po-m-cam-btn" style="width:100%;padding:11px;border:none;border-radius:10px;background:#d32f2f;color:#fff;font-weight:bold;font-size:14px;cursor:pointer;margin-bottom:8px;">📷 เปิดกล้องยิงบาร์โค้ดเช็คบนหน้านี้เลย</button>' +
-          '<div id="po-m-cam-wrap" style="display:none;margin-bottom:8px;background:#0f172a;border-radius:10px;overflow:hidden;position:relative;">' +
-            '<video id="po-m-video" playsinline muted style="width:100%;max-height:220px;object-fit:cover;display:none;"></video>' +
-            '<div id="po-m-reader" style="width:100%;"></div>' +
-          '</div>' +
-          '<div id="po-m-cam-err" style="display:none;font-size:11px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:8px;border-radius:8px;margin-bottom:8px;"></div>' +
-          '<form id="po-m-form" style="display:flex;gap:6px;margin-bottom:8px;">' +
-            '<input id="po-m-input" placeholder="พิมพ์/ยิงเลขพัสดุ 13 หลัก" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-family:monospace;text-transform:uppercase;font-size:13px;">' +
-            '<button type="submit" style="padding:8px 14px;border:none;border-radius:8px;background:#1e293b;color:#fff;font-weight:bold;font-size:13px;cursor:pointer;">ตกลง</button>' +
-          '</form>' +
-          '<div id="po-m-banner" style="display:none;padding:10px;border-radius:10px;border:2px solid #ccc;margin-bottom:8px;font-size:13px;"></div>' +
-          '<div style="display:flex;gap:6px;margin-bottom:8px;">' +
-            '<button id="po-m-toggle-list" style="flex:1;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-weight:bold;font-size:12px;cursor:pointer;">📋 ดูค้างเช็ค / เกิน</button>' +
-            '<button id="po-m-send" style="flex:1;padding:8px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-weight:bold;font-size:12px;cursor:pointer;">🚀 ส่งเข้าแอปมือถือ</button>' +
-          '</div>' +
-          '<div style="display:flex;gap:6px;margin-bottom:8px;">' +
-            '<button id="po-m-copy" style="flex:1;padding:8px;border:none;border-radius:8px;background:#0284c7;color:#fff;font-weight:bold;font-size:12px;cursor:pointer;">📋 คัดลอกไปวางในแอป</button>' +
-            '<button id="po-m-csv" style="padding:8px 12px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-weight:bold;font-size:12px;cursor:pointer;">💾 CSV</button>' +
-          '</div>' +
-          '<div id="po-m-list" style="display:none;max-height:170px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:12px;"></div>' +
-        '</div>';
-        document.body.appendChild(ov);
-        const stopCam = async () => {
-          if (camTimer) { clearInterval(camTimer); camTimer = null; }
-          if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-          if (qrInst) { try { await qrInst.stop(); } catch (e) {} qrInst = null; }
-          const v = document.getElementById('po-m-video');
-          if (v) { v.srcObject = null; v.style.display = 'none'; }
-          const w = document.getElementById('po-m-cam-wrap');
-          if (w) w.style.display = 'none';
-          const b = document.getElementById('po-m-cam-btn');
-          if (b) { b.textContent = '📷 เปิดกล้องยิงบาร์โค้ดเช็คบนหน้านี้เลย'; b.style.background = '#d32f2f'; }
-        };
-        const render = () => {
-          const foundOnPage = scrape().length;
-          document.getElementById('po-m-pull').textContent = '📥 ดูดเลขพัสดุหน้านี้เข้าวันที่ ' + curDate + ' (พบ ' + foundOnPage + ' เลข)';
-          const di = db.items.filter(x => x.d === curDate);
-          const ex = db.extras.filter(x => x.d === curDate);
-          const ok = di.filter(x => x.s === 1).length;
-          document.getElementById('po-s-all').textContent = di.length;
-          document.getElementById('po-s-ok').textContent = ok;
-          document.getElementById('po-s-pend').textContent = di.length - ok;
-          document.getElementById('po-s-ex').textContent = ex.length;
-          const listEl = document.getElementById('po-m-list');
-          if (showList) {
-            listEl.style.display = 'block';
-            const pend = di.filter(x => x.s === 0);
-            let h = '<b>⏳ ค้างเช็ค (' + pend.length + ')</b><br>';
-            h += pend.length ? pend.map(x => '<div style="font-family:monospace;padding:2px 0;">• ' + esc(fmt(x.t)) + '</div>').join('') : '<div style="color:#64748b;">ไม่มีรายการค้าง</div>';
-            if (ex.length) {
-              h += '<hr style="margin:6px 0;"><b style="color:#dc2626;">🔴 เกินระบบ (' + ex.length + ')</b><br>';
-              h += ex.map(x => '<div style="font-family:monospace;color:#dc2626;padding:2px 0;">• ' + esc(fmt(x.t)) + '</div>').join('');
-            }
-            listEl.innerHTML = h;
-          } else {
-            listEl.style.display = 'none';
-          }
-        };
-        const showBanner = (bg, bd, title, sub, switchD) => {
-          const bn = document.getElementById('po-m-banner');
-          bn.style.cssText = 'display:block;padding:10px;border-radius:10px;margin-bottom:8px;font-size:13px;background:' + bg + ';border:2px solid ' + bd + ';';
-          bn.innerHTML = '<div style="font-weight:800;">' + esc(title) + '</div><div style="font-family:monospace;font-size:15px;font-weight:800;margin-top:2px;">' + esc(sub) + '</div>' +
-            (switchD ? '<button id="po-m-sw" style="margin-top:6px;padding:6px 10px;border:none;border-radius:6px;background:#ea580c;color:#fff;font-weight:bold;font-size:12px;cursor:pointer;">สลับไปวันที่ ' + esc(switchD) + '</button>' : '');
-          if (switchD) {
-            document.getElementById('po-m-sw').onclick = () => {
-              curDate = switchD;
-              document.getElementById('po-m-date').value = curDate;
-              render();
-            };
-          }
-        };
-        const checkCode = (raw) => {
-          const cleaned = String(raw || '').replace(/\s+/g, '').toUpperCase();
-          if (!cleaned) return;
-          const m = cleaned.match(/[A-Z]{2}\d{9}[A-Z]{2}/);
-          const code = m ? m[0] : cleaned;
-          const nowT = tmNow();
-          const hit = db.items.find(x => x.d === curDate && x.t === code);
-          if (hit) {
-            if (hit.s === 0) {
-              hit.s = 1;
-              hit.tm = nowT;
-              beep('ok');
-              showBanner('#ecfdf5', '#10b981', '🟢 ตรงกับในระบบ! (' + curDate + ')', fmt(code));
-            } else {
-              beep('dup');
-              showBanner('#fffbeb', '#f59e0b', '🟡 ยิงซ้ำ! เช็คแล้วเมื่อ ' + hit.tm, fmt(code));
-            }
-            save();
-            render();
-            return;
-          }
-          const other = db.items.filter(x => x.d !== curDate && x.t === code);
-          if (other.length) {
-            beep('wd');
-            showBanner('#fff7ed', '#f97316', '🟠 มีในระบบ แต่อยู่คนละวัน! (' + other[0].d + ')', fmt(code), other[0].d);
-            render();
-            return;
-          }
-          if (!db.extras.some(x => x.d === curDate && x.t === code)) {
-            db.extras.unshift({ d: curDate, t: code, tm: nowT });
-          }
-          beep('ex');
-          showBanner('#fef2f2', '#ef4444', '🔴 ไม่มีในระบบ! (ของเกิน)', fmt(code));
-          save();
-          render();
-        };
-        const onCamHit = (txt) => {
-          const c = String(txt || '').trim().toUpperCase();
-          const now = Date.now();
-          if (!c || (c === lastCode && now - lastTs < 1800)) return;
-          lastCode = c;
-          lastTs = now;
-          checkCode(c);
-        };
-        document.getElementById('po-m-close').onclick = async () => { await stopCam(); ov.remove(); };
-        document.getElementById('po-m-date').onchange = (e) => { curDate = e.target.value || td(); render(); };
-        document.getElementById('po-m-pull').onclick = () => {
-          const list = scrape();
-          if (!list.length) { alert('ไม่พบเลขพัสดุ 13 หลักบนหน้าจอนี้ ลองเลื่อนตารางให้แสดงข้อมูลก่อนครับ'); return; }
-          const has = new Set(db.items.filter(x => x.d === curDate).map(x => x.t));
-          let add = 0;
-          list.forEach(t => { if (!has.has(t)) { db.items.push({ d: curDate, t, s: 0, tm: '' }); has.add(t); add++; } });
-          save();
-          render();
-          showBanner('#eff6ff', '#3b82f6', '📥 ดูดข้อมูลเข้าวันที่ ' + curDate + ' สำเร็จ', 'เพิ่มใหม่ ' + add + ' รายการ (ในหน้า ' + list.length + ' รายการ)');
-        };
-        document.getElementById('po-m-form').onsubmit = (e) => {
-          e.preventDefault();
-          const inp = document.getElementById('po-m-input');
-          checkCode(inp.value);
-          inp.value = '';
-        };
-        document.getElementById('po-m-toggle-list').onclick = () => { showList = !showList; render(); };
-        document.getElementById('po-m-send').onclick = async () => {
-          const rawText = getPageText();
-          const trackings = scrape();
-          const payload = { date: curDate, rawText, trackings, replaceDate: true };
-          try {
-            const resp = await fetch(SYNC_URL + '/api/import-report', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            const data = await resp.json();
-            if (data && data.ok) {
-              showBanner('#eff6ff', '#7c3aed', '🚀 ส่งข้อมูลเข้าแอปมือถือสำเร็จ!', 'วันที่ ' + data.date + ' • จำนวน ' + data.added + ' รายการ (อัปเดตบนมือถือทันที)');
-              return;
-            }
-          } catch (e) {}
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(JSON.stringify(payload));
-          alert('ส่งตรงถูกจำกัดสิทธิ์โดยหน้าเว็บ — ระบบคัดลอกข้อมูลเข้าคลิปบอร์ดให้แล้ว นำไปวางในแอปหลักได้เลย!');
-        };
-        document.getElementById('po-m-copy').onclick = () => {
-          const trackings = db.items.filter(x => x.d === curDate).map(x => x.t);
-          const payload = JSON.stringify({ date: curDate, url: location.pathname, rawText: getPageText(), trackings: trackings.length ? trackings : scrape() }, null, 2);
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(payload);
-          alert('คัดลอกข้อมูลวันที่ ' + curDate + ' (พร้อมชื่อร้านและปลายทาง) เรียบร้อย!');
-        };
-        document.getElementById('po-m-csv').onclick = () => {
-          const di = db.items.filter(x => x.d === curDate);
-          const ex = db.extras.filter(x => x.d === curDate);
-          let csv = '\uFEFFวันที่,เลขพัสดุ,สถานะ,เวลา\n';
-          di.forEach(x => { csv += curDate + ',' + x.t + ',' + (x.s ? 'เช็คแล้ว' : 'ค้างเช็ค') + ',' + (x.tm || '-') + '\n'; });
-          ex.forEach(x => { csv += curDate + ',' + x.t + ',เกินระบบ,' + x.tm + '\n'; });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-          a.download = 'postone_' + curDate + '.csv';
-          a.click();
-        };
-        document.getElementById('po-m-cam-btn').onclick = async () => {
-          const errEl = document.getElementById('po-m-cam-err');
-          errEl.style.display = 'none';
-          if (camStream || qrInst) { await stopCam(); return; }
-          const wrap = document.getElementById('po-m-cam-wrap');
-          const btn = document.getElementById('po-m-cam-btn');
-          wrap.style.display = 'block';
-          btn.textContent = '⏹️ ปิดกล้องสแกน';
-          btn.style.background = '#1e293b';
-          try {
-            if ('BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-              let det;
-              try { det = new window.BarcodeDetector({ formats: ['code_128', 'code_39', 'ean_13', 'qr_code'] }); } catch (e) { det = new window.BarcodeDetector(); }
-              camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-              const vid = document.getElementById('po-m-video');
-              vid.srcObject = camStream;
-              vid.style.display = 'block';
-              await vid.play();
-              camTimer = setInterval(async () => {
-                if (vid.readyState >= 2) {
-                  try { const res = await det.detect(vid); if (res && res.length) onCamHit(res[0].rawValue); } catch (e) {}
-                }
-              }, 260);
-              return;
-            }
-            if (!window.Html5Qrcode) {
-              await new Promise((res, rej) => {
-                const sc = document.createElement('script');
-                sc.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-                sc.onload = res;
-                sc.onerror = rej;
-                document.head.appendChild(sc);
-              });
-            }
-            qrInst = new window.Html5Qrcode('po-m-reader');
-            await qrInst.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 120 } }, onCamHit, () => {});
-          } catch (e) {
-            await stopCam();
-            errEl.textContent = 'ไม่สามารถเปิดกล้องบนหน้านี้ได้ (' + (e && e.message ? e.message : 'เบราว์เซอร์หรือเว็บจำกัดสิทธิ์') + ') แนะนำให้ใช้ช่องพิมพ์ด้านล่าง หรือกด "คัดลอกไปแอปหลัก" แทนครับ';
-            errEl.style.display = 'block';
-          }
-        };
-        render();
+      function buildPublicTrackUrl(tracking) {
+        const code = normalizeBarcode(tracking);
+        return `https://track.thailandpost.co.th/?trackNumber=${encodeURIComponent(code)}`;
       }
 
-      const BOOKMARKLET_CODE = 'javascript:(' + postOneMobileOverlay.toString().replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ') + ')();';
+      function buildPostOneTrackUrl(tracking) {
+        const code = normalizeBarcode(tracking);
+        const node = getPostOneNode();
+        const prefix = (!node || node === 'HOME') ? 'W08' : node;
+        return `https://postone.thailandpost.com/${prefix}/m/track?trackNumber=${encodeURIComponent(code)}`;
+      }
+
+      function postOneBookmarkletFn() {
+        const TRK_RE = /[A-Z]{2}\s*\d{4}\s*\d{4}\s*\d\s*[A-Z]{2}|[A-Z]{2}\d{9}[A-Z]{2}/gi;
+        const txt = document.body.innerText || '';
+        const trackings = [...new Set((txt.match(TRK_RE) || []).map(x => x.replace(/\s+/g, '').toUpperCase()))];
+        if (!trackings.length) { alert('ไม่พบเลขพัสดุ 13 หลักในหน้านี้ กรุณาเปิดหน้ารายงาน /m/report แล้วกด Submit ก่อนครับ'); return; }
+        const dm = txt.match(/วันที่\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        let dt = '';
+        if (dm) {
+          let y = Number(dm[3]);
+          if (y > 2400) y -= 543;
+          dt = y + '-' + String(dm[2]).padStart(2, '0') + '-' + String(dm[1]).padStart(2, '0');
+        } else {
+          const d = new Date();
+          dt = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        const payloadFull = JSON.stringify({ date: dt, rawText: txt, trackings });
+        let encoded = encodeURIComponent(payloadFull);
+        if (encoded.length > 28000) {
+          encoded = encodeURIComponent(JSON.stringify({ date: dt, trackings }));
+        }
+        const appUrl = 'https://dreameraeker.github.io/postone-mobile-checker/#autoimport=' + encoded;
+        try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(payloadFull); } catch (e) {}
+        window.open(appUrl, '_blank');
+      }
+
+      const BOOKMARKLET_CODE = 'javascript:(' + postOneBookmarkletFn.toString().replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ') + ')();';
 
       // Date Helpers
       function getLocalTodayISO() {
         const d = new Date();
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
 
       function shiftDateISO(isoDate, offsetDays) {
@@ -843,8 +493,7 @@
       }
 
       function formatTimeNow() {
-        const d = new Date();
-        return d.toTimeString().slice(0, 8);
+        return new Date().toTimeString().slice(0, 8);
       }
 
       function escapeHtml(str) {
@@ -860,16 +509,18 @@
         return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
       }
 
-      // Application State
-      let db = {
-        items: [],
-        extras: [],
-        recentScans: [],
-        shopMeta: {}
-      };
+      function getPostOneNode() {
+        try { return localStorage.getItem(NODE_STORAGE_KEY) || 'W08'; } catch (e) { return 'W08'; }
+      }
 
+      function getPostOneReportUrl(node) {
+        if (!node || node === 'HOME') return 'https://postone.thailandpost.com/';
+        return `https://postone.thailandpost.com/${node}/m/report`;
+      }
+
+      // Application State
+      let db = { items: [], extras: [], recentScans: [], shopMeta: {} };
       const ui = {
-        activeTab: 'scan',
         selectedDate: getLocalTodayISO(),
         customerFilter: 'ALL',
         listFilter: 'pending',
@@ -884,7 +535,6 @@
       let html5QrCode = null;
       let audioCtx = null;
 
-      // Seed Real Data from PostOne /W08/m/report
       function buildSampleData() {
         const today = '2026-11-20';
         return {
@@ -936,11 +586,7 @@
       }
 
       function saveStorageLocalOnly() {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-        } catch (err) {
-          console.warn('Storage save error:', err);
-        }
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch (err) {}
       }
 
       function canServerSync() {
@@ -959,13 +605,9 @@
           });
           if (res.ok) {
             const data = await res.json();
-            if (data && data.updatedAt) {
-              ui.lastServerUpdatedAt = data.updatedAt;
-            }
+            if (data && data.updatedAt) ui.lastServerUpdatedAt = data.updatedAt;
           }
-        } catch (err) {
-          // Ignore network errors if offline
-        } finally {
+        } catch (err) {} finally {
           ui.isSyncingPush = false;
         }
       }
@@ -976,8 +618,7 @@
       }
 
       async function syncFromServer(isInitial) {
-        if (!canServerSync()) return;
-        if (ui.isSyncingPush) return;
+        if (!canServerSync() || ui.isSyncingPush) return;
         try {
           const res = await fetch('/api/db', { cache: 'no-store' });
           if (!res.ok) return;
@@ -989,58 +630,38 @@
             saveStorageLocalOnly();
             renderAll();
           }
-        } catch (err) {
-          // Offline fallback silently uses localStorage
-        }
+        } catch (err) {}
       }
 
-      // Sound & Vibration Feedback
+      // Sound & Vibration
       function playFeedback(type) {
         if (navigator.vibrate) {
-          const patterns = {
-            matched: [60],
-            duplicate: [80, 60, 80],
-            wrong_date: [140, 70, 140],
-            extra: [300]
-          };
+          const patterns = { matched: [60], duplicate: [80, 60, 80], wrong_date: [140, 70, 140], extra: [300] };
           navigator.vibrate(patterns[type] || [50]);
         }
-
         if (!ui.soundEnabled) return;
-
         try {
           const Ctx = window.AudioContext || window.webkitAudioContext;
           if (!Ctx) return;
           if (!audioCtx) audioCtx = new Ctx();
           if (audioCtx.state === 'suspended') audioCtx.resume();
-
-          const beep = (freq, startOffset, duration, wave) => {
+          const beep = (freq, off, dur, wave) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = wave || 'sine';
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startOffset);
-            gain.gain.setValueAtTime(0.18, audioCtx.currentTime + startOffset);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startOffset + duration);
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + off);
+            gain.gain.setValueAtTime(0.18, audioCtx.currentTime + off);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + off + dur);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + startOffset);
-            osc.stop(audioCtx.currentTime + startOffset + duration);
+            osc.start(audioCtx.currentTime + off);
+            osc.stop(audioCtx.currentTime + off + dur);
           };
-
-          if (type === 'matched') {
-            beep(1046, 0, 0.14, 'sine');
-          } else if (type === 'duplicate') {
-            beep(784, 0, 0.09, 'triangle');
-            beep(784, 0.13, 0.09, 'triangle');
-          } else if (type === 'wrong_date') {
-            beep(660, 0, 0.12, 'triangle');
-            beep(440, 0.14, 0.18, 'triangle');
-          } else if (type === 'extra') {
-            beep(220, 0, 0.32, 'sawtooth');
-          }
-        } catch (err) {
-          // Ignore audio errors on restricted devices
-        }
+          if (type === 'matched') beep(1046, 0, 0.14, 'sine');
+          else if (type === 'duplicate') { beep(784, 0, 0.09, 'triangle'); beep(784, 0.13, 0.09, 'triangle'); }
+          else if (type === 'wrong_date') { beep(660, 0, 0.12, 'triangle'); beep(440, 0.14, 0.18, 'triangle'); }
+          else if (type === 'extra') beep(220, 0, 0.32, 'sawtooth');
+        } catch (err) {}
       }
 
       function showToast(msg) {
@@ -1048,10 +669,32 @@
         el.textContent = msg;
         el.classList.remove('hidden');
         clearTimeout(el._timer);
-        el._timer = setTimeout(() => el.classList.add('hidden'), 2200);
+        el._timer = setTimeout(() => el.classList.add('hidden'), 2400);
       }
 
-      // Data Queries for Selected Date & Filter
+      async function copyText(text, successMsg) {
+        try {
+          await navigator.clipboard.writeText(text);
+          if (successMsg) showToast(successMsg);
+        } catch (e) {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          if (successMsg) showToast(successMsg);
+        }
+      }
+
+      function normalizeBarcode(raw) {
+        const rawStr = String(raw || '').trim().toUpperCase();
+        if (!rawStr) return '';
+        const compact = rawStr.replace(/\s+/g, '');
+        const match = compact.match(/[A-Z]{2}\d{9}[A-Z]{2}/);
+        return match ? match[0] : rawStr;
+      }
+
       function getDateItems(date, customer) {
         return db.items.filter(item => {
           if (item.date !== date) return false;
@@ -1064,12 +707,26 @@
         return db.extras.filter(e => e.date === date);
       }
 
-      function normalizeBarcode(raw) {
-        const rawStr = String(raw || '').trim().toUpperCase();
-        if (!rawStr) return '';
-        const compact = rawStr.replace(/\s+/g, '');
-        const match = compact.match(/[A-Z]{2}\d{9}[A-Z]{2}/);
-        return match ? match[0] : rawStr;
+      function renderTrackButtonsHtml(tracking, compact) {
+        const code = escapeHtml(normalizeBarcode(tracking));
+        if (compact) {
+          return `<a href="${escapeHtml(buildPublicTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
+            class="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-extrabold px-2 py-1 rounded-lg transition no-underline">
+            🔍 Track เลขนี้
+          </a>`;
+        }
+        return `
+          <div class="flex gap-1.5 mt-2">
+            <a href="${escapeHtml(buildPublicTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
+              class="flex-1 py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-extrabold text-center shadow-sm transition no-underline">
+              🔍 กด Track ปณท (${code})
+            </a>
+            <a href="${escapeHtml(buildPostOneTrackUrl(code))}" target="_blank" rel="noopener noreferrer" data-track-copy="${code}"
+              class="py-2 px-2.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 border border-slate-300 text-slate-700 text-xs font-bold text-center transition no-underline">
+              PostOne
+            </a>
+          </div>
+        `;
       }
 
       // Core Scan Processing
@@ -1088,30 +745,26 @@
             sameDateMatch.status = 'verified';
             sameDateMatch.verifiedAt = nowTime;
             sameDateMatch.method = source || 'manual';
-
             const remaining = getDateItems(ui.selectedDate, ui.customerFilter).filter(i => i.status === 'pending').length;
-            const otherCustomerNote = (ui.customerFilter !== 'ALL' && sameDateMatch.customer !== ui.customerFilter)
-              ? ` (หมายเหตุ: เป็นของ ${sameDateMatch.customer})`
+            const otherNote = (ui.customerFilter !== 'ALL' && sameDateMatch.customer !== ui.customerFilter)
+              ? ` (เป็นของ ${sameDateMatch.customer})`
               : '';
-
-            recordRecentScan(code, 'matched', `เช็คตรงในระบบ • ${sameDateMatch.customer}`, nowTime);
             playFeedback('matched');
             renderScanBanner({
               type: 'matched',
               tracking: code,
-              title: '🟢 ตรงกับในระบบ!',
-              subtitle: `ลูกค้า: ${sameDateMatch.customer}${otherCustomerNote}`,
-              detail: `${sameDateMatch.note ? sameDateMatch.note + ' • ' : ''}คงเหลือค้างเช็ค ${remaining} ชิ้น`
+              title: '🟢 ตรงกับในรายงาน!',
+              subtitle: `ร้าน: ${sameDateMatch.customer}${otherNote}`,
+              detail: `${sameDateMatch.note ? sameDateMatch.note + ' • ' : ''}เหลือค้างเช็ค ${remaining} ชิ้น`
             });
           } else {
-            recordRecentScan(code, 'duplicate', `ยิงซ้ำ (เช็คแล้วเมื่อ ${sameDateMatch.verifiedAt})`, nowTime);
             playFeedback('duplicate');
             renderScanBanner({
               type: 'duplicate',
               tracking: code,
               title: '🟡 ยิงซ้ำ! พัสดุนี้เช็คไปแล้ว',
-              subtitle: `ลูกค้า: ${sameDateMatch.customer}`,
-              detail: `เช็คไปก่อนหน้านี้เมื่อเวลา ${sameDateMatch.verifiedAt}`
+              subtitle: `ร้าน: ${sameDateMatch.customer}`,
+              detail: `เช็คไปแล้วเมื่อเวลา ${sameDateMatch.verifiedAt}`
             });
           }
           saveStorage();
@@ -1119,21 +772,19 @@
           return;
         }
 
-        // Check other dates (Cross-Date Check)
         const otherDateMatches = db.items
           .filter(i => i.date !== ui.selectedDate && i.tracking === code)
           .sort((a, b) => b.date.localeCompare(a.date));
 
         if (otherDateMatches.length > 0) {
           const match = otherDateMatches[0];
-          recordRecentScan(code, 'wrong_date', `พบในข้อมูลวันที่ ${formatThaiShortDate(match.date)}`, nowTime);
           playFeedback('wrong_date');
           renderScanBanner({
             type: 'wrong_date',
             tracking: code,
             title: '🟠 มีในระบบ แต่อยู่คนละวัน!',
-            subtitle: `พัสดุนี้เป็นข้อมูลของวันที่ ${formatThaiShortDate(match.date)} (${match.date})`,
-            detail: `ลูกค้า: ${match.customer} • สถานะ: ${match.status === 'verified' ? 'เช็คแล้ว' : 'ค้างเช็ค'}`,
+            subtitle: `เลขนี้เป็นรายงานวันที่ ${formatThaiShortDate(match.date)} (${match.date})`,
+            detail: `ร้าน: ${match.customer} • สถานะ: ${match.status === 'verified' ? 'เช็คแล้ว' : 'ค้างเช็ค'}`,
             switchDate: match.date
           });
           saveStorage();
@@ -1141,7 +792,7 @@
           return;
         }
 
-        // Not in system -> Extra physical item
+        // Not in Report -> Alert prominently + add to unlisted list
         const existingExtra = db.extras.find(e => e.date === ui.selectedDate && e.tracking === code);
         if (existingExtra) {
           existingExtra.count = (existingExtra.count || 1) + 1;
@@ -1156,31 +807,18 @@
           });
         }
 
-        recordRecentScan(code, 'extra', 'ไม่มีในระบบ (ของเกิน)', nowTime);
         playFeedback('extra');
         renderScanBanner({
           type: 'extra',
           tracking: code,
-          title: '🔴 ไม่มีในระบบ! (ของเกิน)',
-          subtitle: 'ไม่พบเลขพัสดุนี้ในรายการรับฝากของทุกวัน',
-          detail: 'กรุณาแยกพัสดุชิ้นนี้ไว้ เพื่อนำไปบันทึกเข้าระบบ PostOne'
+          title: '🔴 ไม่มีในรายงาน! (พัสดุเกิน)',
+          subtitle: `เลขที่ ${formatDisplayTracking(code)} ไม่พบในรายงานวันที่เลือก`,
+          detail: 'กดที่เลขด้านล่างเพื่อเปิดดู Track หรือแยกไว้บันทึกเข้าระบบ PostOne',
+          isUnlisted: true
         });
 
         saveStorage();
         renderAll();
-      }
-
-      function recordRecentScan(tracking, result, message, time) {
-        db.recentScans.unshift({
-          tracking,
-          date: ui.selectedDate,
-          result,
-          message,
-          time
-        });
-        if (db.recentScans.length > 15) {
-          db.recentScans = db.recentScans.slice(0, 15);
-        }
       }
 
       function renderScanBanner(info) {
@@ -1192,23 +830,27 @@
           extra: 'bg-red-50 border-red-500 text-red-950'
         };
 
-        banner.className = `rounded-2xl p-4 shadow-md border-2 animate-pop ${styles[info.type] || styles.extra}`;
+        banner.className = `rounded-2xl p-3.5 shadow-md border-2 animate-pop ${styles[info.type] || styles.extra}`;
 
         const switchBtn = info.switchDate
           ? `<button type="button" data-switch-date="${escapeHtml(info.switchDate)}"
-               class="mt-2.5 w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold shadow-sm transition">
+               class="mt-2 w-full py-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold shadow-sm transition">
                📅 สลับไปดูข้อมูลวันที่ ${escapeHtml(formatThaiShortDate(info.switchDate))}
              </button>`
           : '';
 
+        const isTrackingCode = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(normalizeBarcode(info.tracking));
+        const trackBlock = isTrackingCode ? renderTrackButtonsHtml(info.tracking, false) : '';
+
         banner.innerHTML = `
           <div class="flex items-start justify-between gap-2">
-            <div class="text-base font-extrabold leading-snug">${escapeHtml(info.title)}</div>
+            <div class="text-sm font-extrabold leading-snug">${escapeHtml(info.title)}</div>
             <span class="text-[11px] font-bold opacity-75 shrink-0">${escapeHtml(formatTimeNow())}</span>
           </div>
-          <div class="mt-1.5 font-mono text-xl font-black tracking-wide break-all">${escapeHtml(formatDisplayTracking(info.tracking))}</div>
-          <div class="mt-1 text-xs font-bold">${escapeHtml(info.subtitle)}</div>
-          <div class="mt-0.5 text-xs opacity-85">${escapeHtml(info.detail)}</div>
+          <div class="mt-1 font-mono text-lg font-black tracking-wide break-all">${escapeHtml(formatDisplayTracking(info.tracking))}</div>
+          <div class="mt-0.5 text-xs font-bold">${escapeHtml(info.subtitle)}</div>
+          <div class="mt-0.5 text-[11px] opacity-85">${escapeHtml(info.detail)}</div>
+          ${trackBlock}
           ${switchBtn}
         `;
         banner.classList.remove('hidden');
@@ -1220,9 +862,19 @@
             showToast('สลับวันที่เรียบร้อย');
           });
         }
+        bindTrackCopyLinks(banner);
       }
 
-      // Render UI Sections
+      function bindTrackCopyLinks(container) {
+        container.querySelectorAll('[data-track-copy]').forEach(el => {
+          el.addEventListener('click', () => {
+            const code = el.getAttribute('data-track-copy');
+            copyText(code, `คัดลอก ${code} แล้ว • กำลังเปิดหน้า Track`);
+          });
+        });
+      }
+
+      // Render Functions
       function setSelectedDate(dateStr) {
         if (!dateStr) return;
         ui.selectedDate = dateStr;
@@ -1232,29 +884,32 @@
         renderAll();
       }
 
+      function updatePostOneLinks() {
+        const node = getPostOneNode();
+        const url = getPostOneReportUrl(node);
+        const sel = document.getElementById('postoneNodeSelect');
+        if (sel) sel.value = node;
+        const primary = document.getElementById('postonePrimaryLink');
+        if (primary) primary.href = url;
+      }
+
       function renderHeaderControls() {
         document.getElementById('selectedDate').value = ui.selectedDate;
+        updatePostOneLinks();
 
-        // Collect all dates with items or extras + always include today & selectedDate
         const countsByDate = {};
         const today = getLocalTodayISO();
         countsByDate[today] = countsByDate[today] || 0;
         countsByDate[ui.selectedDate] = countsByDate[ui.selectedDate] || 0;
 
-        db.items.forEach(item => {
-          countsByDate[item.date] = (countsByDate[item.date] || 0) + 1;
-        });
-        db.extras.forEach(ex => {
-          if (!(ex.date in countsByDate)) countsByDate[ex.date] = 0;
-        });
+        db.items.forEach(item => { countsByDate[item.date] = (countsByDate[item.date] || 0) + 1; });
+        db.extras.forEach(ex => { if (!(ex.date in countsByDate)) countsByDate[ex.date] = 0; });
 
         const sortedDates = Object.keys(countsByDate).sort((a, b) => b.localeCompare(a));
         const chipsEl = document.getElementById('dateChips');
         chipsEl.innerHTML = sortedDates.map(d => {
           const active = d === ui.selectedDate;
-          const cls = active
-            ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-sm'
-            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100';
+          const cls = active ? 'bg-[#d32f2f] text-white border-[#d32f2f] shadow-sm' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100';
           return `<button type="button" data-chip-date="${escapeHtml(d)}"
             class="shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-bold transition ${cls}">
             ${escapeHtml(formatThaiShortDate(d))} (${countsByDate[d]})
@@ -1265,15 +920,22 @@
           btn.addEventListener('click', () => setSelectedDate(btn.getAttribute('data-chip-date')));
         });
 
-        // Customer Filter Dropdown for selected date
         const customers = [...new Set(db.items.filter(i => i.date === ui.selectedDate).map(i => i.customer))].sort();
         const selectEl = document.getElementById('customerFilter');
         if (ui.customerFilter !== 'ALL' && !customers.includes(ui.customerFilter)) {
           ui.customerFilter = 'ALL';
         }
-        selectEl.innerHTML = `<option value="ALL">ทุกลูกค้า / ทุกรอบ</option>` +
+        selectEl.innerHTML = `<option value="ALL">ทุกร้าน / ทุกรอบ</option>` +
           customers.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
         selectEl.value = ui.customerFilter;
+
+        const allDayItems = getDateItems(ui.selectedDate, 'ALL');
+        const statusEl = document.getElementById('step1StatusText');
+        if (allDayItems.length === 0) {
+          statusEl.textContent = 'ยังไม่มีรายงานวันนี้ — เปิด PostOne แล้วคัดลอกมาวางได้เลย';
+        } else {
+          statusEl.textContent = `โหลดรายงานแล้ว ${allDayItems.length} ชิ้น (กดเปิด PostOne เพื่อดึงเพิ่มได้)`;
+        }
       }
 
       function renderScoreboard() {
@@ -1287,55 +949,63 @@
 
         const shopMetaForDate = (db.shopMeta && db.shopMeta[ui.selectedDate]) || {};
         const selectedMeta = ui.customerFilter !== 'ALL' ? shopMetaForDate[ui.customerFilter] : null;
-        const metaNote = selectedMeta && selectedMeta.declaredCount
-          ? ` (แจ้ง ${selectedMeta.declaredCount} ชิ้น)`
-          : '';
+        const metaNote = selectedMeta && selectedMeta.declaredCount ? ` (แจ้ง ${selectedMeta.declaredCount} ชิ้น)` : '';
 
-        document.getElementById('scoreboardTitle').textContent =
-          `สรุปยอด • ${formatThaiShortDate(ui.selectedDate)}${metaNote}`;
+        document.getElementById('scoreboardTitle').textContent = `สรุปยอด • ${formatThaiShortDate(ui.selectedDate)}${metaNote}`;
         document.getElementById('statTotal').textContent = total;
         document.getElementById('statVerified').textContent = verified;
         document.getElementById('statPending').textContent = pending;
         document.getElementById('statExtra').textContent = extraCount;
         document.getElementById('progressPercentLabel').textContent = `${pct}% (${verified}/${total})`;
         document.getElementById('progressBarFill').style.width = `${pct}%`;
-
-        const badge = document.getElementById('navPendingBadge');
-        if (pending > 0) {
-          badge.textContent = pending;
-          badge.classList.remove('hidden');
-        } else {
-          badge.classList.add('hidden');
-        }
       }
 
-      function renderRecentFeed() {
-        const feedEl = document.getElementById('recentFeed');
-        const list = db.recentScans.slice(0, 5);
-        if (!list.length) {
-          feedEl.innerHTML = '<p class="text-xs text-slate-400 text-center py-3">ยังไม่มีการสแกนในรอบนี้</p>';
+      function renderUnlistedAlertSection() {
+        const extras = getDateExtras(ui.selectedDate);
+        const section = document.getElementById('unlistedAlertSection');
+        const listEl = document.getElementById('unlistedListContainer');
+        if (!extras.length) {
+          section.classList.add('hidden');
           return;
         }
-        const dotMap = {
-          matched: '🟢',
-          duplicate: '🟡',
-          wrong_date: '🟠',
-          extra: '🔴'
-        };
-        feedEl.innerHTML = list.map(s => `
-          <div class="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2">
+        section.classList.remove('hidden');
+        document.getElementById('unlistedTitle').textContent = `🚨 พบเลขที่ไม่มีในรายงาน (${extras.length} ชิ้น)`;
+        listEl.innerHTML = extras.map(ex => `
+          <div class="bg-white rounded-xl p-2.5 border border-red-200 flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <div class="text-xs font-mono font-bold text-slate-800 truncate">
-                ${dotMap[s.result] || '⚪'} ${escapeHtml(formatDisplayTracking(s.tracking))}
+              <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+                class="font-mono text-sm font-black text-red-700 hover:text-red-900 underline break-all">
+                🔍 ${escapeHtml(formatDisplayTracking(ex.tracking))}
+              </a>
+              <div class="text-[10px] text-slate-500">
+                สแกนเมื่อ ${escapeHtml(ex.scannedAt)}${ex.count > 1 ? ` • ยิงซ้ำ ${ex.count} ครั้ง` : ''} • กดที่เลขเพื่อไป Track
               </div>
-              <div class="text-[11px] text-slate-500 truncate">${escapeHtml(s.message)}</div>
             </div>
-            <span class="text-[10px] font-semibold text-slate-400 shrink-0">${escapeHtml(s.time)}</span>
+            <div class="flex items-center gap-1 shrink-0">
+              <a href="${escapeHtml(buildPostOneTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1.5 rounded-lg no-underline">
+                PostOne
+              </a>
+              <button type="button" data-del-extra="${escapeHtml(ex.id)}"
+                class="bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold px-2 py-1.5 rounded-lg">
+                ลบ
+              </button>
+            </div>
           </div>
         `).join('');
+
+        bindTrackCopyLinks(listEl);
+        listEl.querySelectorAll('[data-del-extra]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-extra');
+            db.extras = db.extras.filter(e => e.id !== id);
+            saveStorage();
+            renderAll();
+          });
+        });
       }
 
-      function renderListTab() {
+      function renderReportList() {
         const items = getDateItems(ui.selectedDate, ui.customerFilter);
         const extras = getDateExtras(ui.selectedDate);
         const pendingItems = items.filter(i => i.status === 'pending');
@@ -1351,7 +1021,7 @@
         const labels = {
           pending: 'ค้างเช็ค',
           verified: 'เช็คแล้ว',
-          extra: 'เกินระบบ',
+          extra: 'ไม่มีในรายงาน',
           all: 'ทั้งหมด'
         };
 
@@ -1359,55 +1029,37 @@
           const key = btn.getAttribute('data-filter');
           btn.textContent = `${labels[key]} (${counts[key]})`;
           const active = key === ui.listFilter;
-          btn.className = `list-pill py-2 px-1 rounded-xl text-[11px] font-bold transition ${
-            active
-              ? 'bg-[#d32f2f] text-white shadow-sm'
-              : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+          btn.className = `list-pill py-2 px-1 rounded-xl text-[10px] font-bold transition ${
+            active ? 'bg-[#d32f2f] text-white shadow-sm' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
           }`;
         });
 
-        const topActionEl = document.getElementById('listTopAction');
         const containerEl = document.getElementById('itemListContainer');
 
         if (ui.listFilter === 'extra') {
-          if (extras.length > 0) {
-            topActionEl.classList.remove('hidden');
-            topActionEl.innerHTML = `
-              <button id="btnCopyExtras" type="button"
-                class="w-full py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold shadow-sm transition">
-                📋 คัดลอกเลขของเกินทั้งหมด (${extras.length} รายการ) ไปวางใน PostOne
-              </button>
-            `;
-            document.getElementById('btnCopyExtras').addEventListener('click', () => {
-              const text = extras.map(e => e.tracking).join('\n');
-              copyText(text, `คัดลอกเลขของเกิน ${extras.length} รายการแล้ว`);
-            });
-          } else {
-            topActionEl.classList.add('hidden');
-          }
-
           if (!extras.length) {
-            containerEl.innerHTML = emptyCard('ยังไม่มีรายการของเกินระบบในวันนี้');
+            containerEl.innerHTML = emptyCard('ยังไม่มีรายการที่ไม่มีในรายงานของวันนี้');
             return;
           }
-
           containerEl.innerHTML = extras.map(ex => `
-            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-red-200 flex items-center justify-between gap-2">
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-red-300 flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">เกินระบบ</span>
-                  ${ex.count > 1 ? `<span class="text-[10px] font-bold text-slate-500">ยิง ${ex.count} ครั้ง</span>` : ''}
+                <span class="bg-red-100 text-red-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🔴 ไม่มีในรายงาน</span>
+                <div class="mt-1">
+                  <a href="${escapeHtml(buildPublicTrackUrl(ex.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(ex.tracking)}"
+                    class="font-mono text-base font-extrabold text-red-700 underline break-all">
+                    ${escapeHtml(formatDisplayTracking(ex.tracking))}
+                  </a>
                 </div>
-                <div class="font-mono text-base font-extrabold text-slate-900 mt-1 break-all">${escapeHtml(formatDisplayTracking(ex.tracking))}</div>
-                <div class="text-[11px] text-slate-500 mt-0.5">สแกนเมื่อ ${escapeHtml(ex.scannedAt)}</div>
+                <div class="text-[11px] text-slate-500 mt-0.5">สแกนเมื่อ ${escapeHtml(ex.scannedAt)} • แตะที่เลขเพื่อไปหน้า Track</div>
               </div>
               <button type="button" data-del-extra="${escapeHtml(ex.id)}"
-                class="shrink-0 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-bold px-2.5 py-2 rounded-xl transition">
+                class="shrink-0 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-xs font-bold px-2.5 py-2 rounded-xl">
                 ลบ
               </button>
             </div>
           `).join('');
-
+          bindTrackCopyLinks(containerEl);
           containerEl.querySelectorAll('[data-del-extra]').forEach(btn => {
             btn.addEventListener('click', () => {
               const id = btn.getAttribute('data-del-extra');
@@ -1419,8 +1071,6 @@
           return;
         }
 
-        topActionEl.classList.add('hidden');
-
         let list = items;
         if (ui.listFilter === 'pending') list = pendingItems;
         else if (ui.listFilter === 'verified') list = verifiedItems;
@@ -1428,7 +1078,7 @@
         if (!list.length) {
           const msg = ui.listFilter === 'pending' && items.length > 0
             ? '🎉 เยี่ยมมาก! เช็คพัสดุครบทุกรายการแล้ว'
-            : 'ไม่มีรายการพัสดุในหมวดนี้ (ลองสลับวันที่ หรือนำเข้าข้อมูลใหม่)';
+            : 'ยังไม่มีรายการในวันที่เลือก — กด "🌐 เปิดเว็บ PostOne" ด้านบนเพื่อดึงรายงาน';
           containerEl.innerHTML = emptyCard(msg);
           return;
         }
@@ -1452,8 +1102,14 @@
           return `
             <div class="bg-white rounded-2xl p-3.5 shadow-sm border ${isVerified ? 'border-emerald-200' : 'border-amber-200'} flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-1.5">${badge}</div>
-                <div class="font-mono text-base font-extrabold text-slate-900 mt-1 break-all">${escapeHtml(formatDisplayTracking(item.tracking))}</div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  ${badge}
+                  ${renderTrackButtonsHtml(item.tracking, true)}
+                </div>
+                <a href="${escapeHtml(buildPublicTrackUrl(item.tracking))}" target="_blank" rel="noopener noreferrer" data-track-copy="${escapeHtml(item.tracking)}"
+                  class="block font-mono text-base font-extrabold text-slate-900 hover:text-blue-700 mt-1 break-all no-underline">
+                  ${escapeHtml(formatDisplayTracking(item.tracking))}
+                </a>
                 <div class="text-[10px] font-mono text-slate-400">(${escapeHtml(item.tracking)})</div>
                 <div class="text-xs font-bold text-slate-700 truncate mt-0.5">${escapeHtml(item.customer)}</div>
                 ${item.note ? `<div class="text-[11px] text-slate-500 truncate">${escapeHtml(item.note)}</div>` : ''}
@@ -1463,6 +1119,8 @@
           `;
         }).join('');
 
+        bindTrackCopyLinks(containerEl);
+
         containerEl.querySelectorAll('[data-confirm-id]').forEach(btn => {
           btn.addEventListener('click', () => {
             const item = db.items.find(i => i.id === btn.getAttribute('data-confirm-id'));
@@ -1470,7 +1128,6 @@
               item.status = 'verified';
               item.verifiedAt = formatTimeNow();
               item.method = 'manual';
-              recordRecentScan(item.tracking, 'matched', `ยืนยันมือ • ${item.customer}`, item.verifiedAt);
               playFeedback('matched');
               saveStorage();
               renderAll();
@@ -1498,79 +1155,18 @@
         return `<div class="bg-white rounded-2xl p-6 text-center text-xs font-semibold text-slate-500 border border-slate-200">${escapeHtml(text)}</div>`;
       }
 
-      function renderTabVisibility() {
-        const tabs = {
-          scan: document.getElementById('tabScan'),
-          list: document.getElementById('tabList'),
-          import: document.getElementById('tabImport')
-        };
-        Object.keys(tabs).forEach(k => {
-          tabs[k].classList.toggle('hidden', k !== ui.activeTab);
-        });
-
-        const scoreboard = document.getElementById('scoreboardCard');
-        scoreboard.classList.toggle('hidden', ui.activeTab === 'import');
-
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-          const isActive = btn.getAttribute('data-tab') === ui.activeTab;
-          btn.classList.toggle('text-[#d32f2f]', isActive);
-          btn.classList.toggle('text-slate-500', !isActive);
-        });
-      }
-
-      const NODE_STORAGE_KEY = 'postone_node_code_v1';
-
-      function getPostOneNode() {
-        try {
-          return localStorage.getItem(NODE_STORAGE_KEY) || 'W08';
-        } catch (e) {
-          return 'W08';
-        }
-      }
-
-      function getPostOneReportUrl(node) {
-        if (!node || node === 'HOME') return 'https://postone.thailandpost.com/';
-        return `https://postone.thailandpost.com/${node}/m/report`;
-      }
-
-      function updatePostOneLinks() {
-        const node = getPostOneNode();
-        const url = getPostOneReportUrl(node);
-        const sel = document.getElementById('postoneNodeSelect');
-        if (sel) sel.value = node;
-        ['postonePrimaryLink', 'postoneCompactLink', 'postoneImportLink'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.href = url;
-        });
-        const hint = document.getElementById('postoneNodeHint');
-        if (hint) {
-          hint.textContent = node === 'HOME' ? 'เปิดหน้าหลัก PostOne' : `ไปที่ /${node}/m/report`;
-        }
-      }
-
-      function renderPostOneLauncher() {
-        const dateAllItems = getDateItems(ui.selectedDate, 'ALL');
-        const hasData = dateAllItems.length > 0;
-        const expandedEl = document.getElementById('postoneLaunchExpanded');
-        const compactEl = document.getElementById('postoneLaunchCompact');
-        if (expandedEl) expandedEl.classList.toggle('hidden', hasData);
-        if (compactEl) compactEl.classList.toggle('hidden', !hasData);
-        updatePostOneLinks();
-      }
-
       function renderAll() {
         renderHeaderControls();
         renderScoreboard();
-        renderPostOneLauncher();
-        renderRecentFeed();
-        renderListTab();
-        renderTabVisibility();
+        renderUnlistedAlertSection();
+        renderReportList();
       }
 
-      // Camera Control (html5-qrcode)
+      // Camera Scanner Control
       async function toggleCamera() {
         const container = document.getElementById('cameraContainer');
         const btn = document.getElementById('btnToggleCamera');
+        const stickyBtn = document.getElementById('btnStickyScan');
         const notice = document.getElementById('cameraNotice');
         notice.classList.add('hidden');
 
@@ -1580,20 +1176,21 @@
         }
 
         if (typeof Html5Qrcode === 'undefined') {
-          notice.textContent = 'ไม่สามารถโหลดตัวสแกนกล้องได้ (อาจไม่ได้เชื่อมต่ออินเทอร์เน็ต) แต่ยังสามารถพิมพ์เลขพัสดุ ใช้ปืนสแกน หรือกดปุ่มจำลองด้านล่างได้ครับ';
+          notice.textContent = 'ไม่สามารถโหลดตัวสแกนกล้องได้ กรุณาลองกด "📸 ถ่ายรูป" หรือพิมพ์เลขพัสดุแทนครับ';
           notice.classList.remove('hidden');
           return;
         }
 
+        document.getElementById('cameraCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
         container.classList.remove('hidden');
         btn.innerHTML = '<span>⏹️ ปิดกล้องสแกน</span>';
         btn.classList.replace('bg-[#d32f2f]', 'bg-slate-800');
         btn.classList.replace('hover:bg-red-700', 'hover:bg-slate-900');
+        stickyBtn.innerHTML = '<span>⏹️ ปิดกล้อง</span>';
+        stickyBtn.classList.replace('bg-[#d32f2f]', 'bg-slate-800');
 
         try {
-          if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode('reader');
-          }
+          if (!html5QrCode) html5QrCode = new Html5Qrcode('reader');
           ui.cameraActive = true;
           await html5QrCode.start(
             { facingMode: 'environment' },
@@ -1607,9 +1204,7 @@
             (decodedText) => {
               const code = normalizeBarcode(decodedText);
               const now = Date.now();
-              if (code === ui.lastCameraCode && now - ui.lastCameraTime < 1800) {
-                return;
-              }
+              if (code === ui.lastCameraCode && now - ui.lastCameraTime < 1800) return;
               ui.lastCameraCode = code;
               ui.lastCameraTime = now;
               processScan(code, 'camera');
@@ -1619,32 +1214,33 @@
         } catch (err) {
           ui.cameraActive = false;
           container.classList.add('hidden');
-          resetCameraButton();
+          resetCameraButtons();
           const isInsecure = location.protocol === 'file:' || (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
           notice.textContent = isInsecure
-            ? 'เปิดกล้องไม่ได้เนื่องจากเบราว์เซอร์มือถือจำกัดการใช้กล้องเมื่อเปิดผ่านไฟล์ตรง (file:// หรือ HTTP) — แนะนำให้เปิดผ่าน HTTPS/localhost หรือใช้ช่องพิมพ์/ปุ่มจำลองด้านล่างแทน'
-            : `ไม่สามารถเปิดกล้องได้ (${err && err.message ? err.message : 'กรุณาอนุญาตสิทธิ์กล้อง'}) — สามารถใช้ช่องพิมพ์เลขพัสดุหรือปุ่มจำลองด้านล่างได้ทันที`;
+            ? 'เปิดกล้องสดไม่ได้เนื่องจากหน้าเว็บเปิดผ่าน HTTP/ไฟล์ตรง — กรุณาเปิดผ่านลิงก์ถาวร HTTPS หรือกด "📸 ถ่ายรูป" แทนครับ'
+            : `ไม่สามารถเปิดกล้องได้ (${err && err.message ? err.message : 'กรุณาอนุญาตสิทธิ์กล้อง'}) — กด "📸 ถ่ายรูป" หรือพิมพ์เลขพัสดุแทนได้ครับ`;
           notice.classList.remove('hidden');
         }
       }
 
-      function resetCameraButton() {
+      function resetCameraButtons() {
         const btn = document.getElementById('btnToggleCamera');
-        btn.innerHTML = '<span>📷 เปิดกล้องมือถือสแกนบาร์โค้ด</span>';
+        btn.innerHTML = '<span>📷 เปิดกล้องสแกนบาร์โค้ด</span>';
         btn.classList.remove('bg-slate-800', 'hover:bg-slate-900');
         btn.classList.add('bg-[#d32f2f]', 'hover:bg-red-700');
+
+        const stickyBtn = document.getElementById('btnStickyScan');
+        stickyBtn.innerHTML = '<span>📷 เปิดกล้องสแกนบาร์โค้ด</span>';
+        stickyBtn.classList.remove('bg-slate-800');
+        stickyBtn.classList.add('bg-[#d32f2f]');
       }
 
       async function stopCamera() {
         ui.cameraActive = false;
         document.getElementById('cameraContainer').classList.add('hidden');
-        resetCameraButton();
+        resetCameraButtons();
         if (html5QrCode) {
-          try {
-            await html5QrCode.stop();
-          } catch (e) {
-            // Ignore if already stopped
-          }
+          try { await html5QrCode.stop(); } catch (e) {}
         }
       }
 
@@ -1659,77 +1255,49 @@
           try {
             const snapQr = new Html5Qrcode('snapReader');
             decoded = await snapQr.scanFile(file, false);
-          } catch (e) {
-            decoded = '';
-          }
+          } catch (e) { decoded = ''; }
         }
-
         if (!decoded && 'BarcodeDetector' in window) {
           try {
             const bmp = await createImageBitmap(file);
             const det = new window.BarcodeDetector();
             const hits = await det.detect(bmp);
             if (hits && hits.length) decoded = hits[0].rawValue;
-          } catch (e) {
-            decoded = '';
-          }
+          } catch (e) { decoded = ''; }
         }
-
         if (decoded) {
           processScan(decoded, 'camera');
         } else {
-          notice.textContent = 'ไม่พบบาร์โค้ดในภาพที่ถ่าย กรุณาถ่ายให้เห็นแถบบาร์โค้ดชัดเจนขึ้น หรือพิมพ์เลขพัสดุ 13 หลักด้านล่างครับ';
+          notice.textContent = 'ไม่พบบาร์โค้ดในภาพที่ถ่าย กรุณาถ่ายให้เห็นแถบบาร์โค้ดชัดเจนขึ้นหรือพิมพ์เลขพัสดุครับ';
           notice.classList.remove('hidden');
           showToast('อ่านบาร์โค้ดจากภาพไม่สำเร็จ');
         }
       }
 
-      // Mobile QR Code Modal Helpers
+      // QR Code Modal
       function renderMobileQr(mode) {
         const isHttps = mode !== 'lan';
         const url = isHttps ? MOBILE_HTTPS_URL : MOBILE_LAN_URL;
-        const btnHttps = document.getElementById('btnQrModeHttps');
-        const btnLan = document.getElementById('btnQrModeLan');
+        document.getElementById('btnQrModeHttps').className = `py-1.5 px-2 rounded-lg text-[11px] font-bold transition ${isHttps ? 'bg-[#d32f2f] text-white shadow-sm' : 'text-slate-600'}`;
+        document.getElementById('btnQrModeLan').className = `py-1.5 px-2 rounded-lg text-[11px] font-bold transition ${!isHttps ? 'bg-[#d32f2f] text-white shadow-sm' : 'text-slate-600'}`;
+        document.getElementById('qrUrlInput').value = url;
+        document.getElementById('qrUrlHint').textContent = isHttps
+          ? 'ลิงก์ถาวร HTTPS เปิดใช้งานและสแกนกล้องบนมือถือได้ตลอด 24 ชม. แม้ปิดเครื่องคอมฯ'
+          : 'ลิงก์ Wi-Fi / Hotspot วงแลนเดียวกัน (ถ้าเปิดกล้องสดไม่ได้ ให้ใช้ปุ่ม "📸 ถ่ายรูป" แทน)';
+
         const box = document.getElementById('qrCodeBox');
         const fallback = document.getElementById('qrFallbackNote');
-        const input = document.getElementById('qrUrlInput');
-        const hint = document.getElementById('qrUrlHint');
-
-        btnHttps.className = `py-1.5 px-2 rounded-lg text-[11px] font-bold transition ${isHttps ? 'bg-[#d32f2f] text-white shadow-sm' : 'text-slate-600'}`;
-        btnLan.className = `py-1.5 px-2 rounded-lg text-[11px] font-bold transition ${!isHttps ? 'bg-[#d32f2f] text-white shadow-sm' : 'text-slate-600'}`;
-
-        input.value = url;
-        hint.textContent = isHttps
-          ? 'ลิงก์ถาวร HTTPS เปิดใช้งานและสแกนกล้องบนมือถือได้ตลอด 24 ชม. แม้ปิดเครื่องคอมฯ'
-          : 'ลิงก์ Wi-Fi / Hotspot วงแลนเดียวกัน (ถ้าเปิดกล้องสดไม่ได้ ให้ใช้ปุ่ม "📸 ถ่ายรูปสแกนบาร์โค้ด" แทนได้ทันที)';
-
         box.innerHTML = '';
         fallback.classList.add('hidden');
         if (typeof QRCode !== 'undefined') {
-          new QRCode(box, {
-            text: url,
-            width: 180,
-            height: 180,
-            colorDark: '#0f172a',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
-          });
+          new QRCode(box, { text: url, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
         } else {
-          fallback.textContent = 'ไม่สามารถโหลดตัวสร้าง QR Code ได้ กรุณากดปุ่ม "คัดลอก" เพื่อส่งลิงก์เข้ามือถือแทนครับ';
+          fallback.textContent = 'ไม่สามารถโหลดตัวสร้าง QR Code ได้ กรุณากดปุ่มคัดลอกลิงก์แทนครับ';
           fallback.classList.remove('hidden');
         }
       }
 
-      function openMobileQrModal() {
-        document.getElementById('mobileQrModal').classList.remove('hidden');
-        renderMobileQr('https');
-      }
-
-      function closeMobileQrModal() {
-        document.getElementById('mobileQrModal').classList.add('hidden');
-      }
-
-      // Import Data Parser (PostOne /m/report Smart Parser + JSON Bookmarklet + CSV)
+      // Smart Report Parser (/m/report)
       function parseThaiOrIsoDate(d, m, y) {
         let year = Number(y);
         if (year > 2400) year -= 543;
@@ -1749,30 +1317,12 @@
           try {
             const data = JSON.parse(trimmed);
             if (data && typeof data === 'object') {
-              if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
-                targetDate = data.date;
-              }
-              if (typeof data.rawText === 'string' && data.rawText.trim()) {
-                textToParse = data.rawText;
-              }
+              if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) targetDate = data.date;
+              if (typeof data.rawText === 'string' && data.rawText.trim()) textToParse = data.rawText;
               if (Array.isArray(data.rows)) jsonRows = data.rows;
               if (Array.isArray(data.trackings)) jsonTrackings = data.trackings;
-              if (Array.isArray(data)) {
-                const direct = [];
-                data.forEach(item => {
-                  if (typeof item === 'string') {
-                    const code = normalizeBarcode(item);
-                    if (code) direct.push({ date: targetDate, tracking: code, customer: fallbackCustomer, note: '' });
-                  } else if (item && item.tracking) {
-                    direct.push({ date: item.date || targetDate, tracking: normalizeBarcode(item.tracking), customer: item.customer || fallbackCustomer, note: item.note || '' });
-                  }
-                });
-                if (direct.length) return { date: targetDate, parsed: direct, shopMeta: {} };
-              }
             }
-          } catch (e) {
-            // Fall through to report text parsing
-          }
+          } catch (e) {}
         }
 
         const lines = textToParse.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -1806,7 +1356,6 @@
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
-
           const dateMatch = line.match(/วันที่\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
           if (dateMatch) {
             const iso = parseThaiOrIsoDate(dateMatch[1], dateMatch[2], dateMatch[3]);
@@ -1830,9 +1379,7 @@
               shopName = prev1;
             }
             currentShop = shopName ? `${shopName} (${routeMatch[1]})` : routeMatch[1];
-            if (declaredCount !== null) {
-              shopMeta[currentShop] = { declaredCount };
-            }
+            if (declaredCount !== null) shopMeta[currentShop] = { declaredCount };
             continue;
           }
 
@@ -1844,28 +1391,19 @@
               let discount = '';
               for (let k = i + 1; k < Math.min(i + 5, lines.length); k++) {
                 const nextLine = lines[k];
-                if (new RegExp(TRACKING_REGEX.source, 'i').test(nextLine) || /^Route\s+/i.test(nextLine) || /^วันที่\s*/.test(nextLine)) {
-                  break;
-                }
-                if (/^\d+(\.\d+)?$/.test(nextLine) && !price) {
-                  price = `${nextLine} บาท`;
-                } else if (/^ปลายทาง/i.test(nextLine)) {
-                  dest = nextLine.replace(/\s*·\s*ขนส่งรับเข้าระบบ/g, '').trim();
-                } else if (/^ส่วนลด/i.test(nextLine)) {
-                  discount = nextLine.trim();
-                }
+                if (new RegExp(TRACKING_REGEX.source, 'i').test(nextLine) || /^Route\s+/i.test(nextLine) || /^วันที่\s*/.test(nextLine)) break;
+                if (/^\d+(\.\d+)?$/.test(nextLine) && !price) price = `${nextLine} บาท`;
+                else if (/^ปลายทาง/i.test(nextLine)) dest = nextLine.replace(/\s*·\s*ขนส่งรับเข้าระบบ/g, '').trim();
+                else if (/^ส่วนลด/i.test(nextLine)) discount = nextLine.trim();
               }
-
               const noteParts = [];
               if (dest) noteParts.push(dest);
               if (price) noteParts.push(price + (discount ? ` (${discount})` : ''));
               else if (discount) noteParts.push(discount);
-
               if (!noteParts.length) {
                 const cleaned = line.replace(rawMatch, '').replace(/[,\t;|]+/g, ' ').replace(/\s+/g, ' ').trim();
                 if (cleaned) noteParts.push(cleaned.slice(0, 80));
               }
-
               addEntry(rawMatch, currentShop, noteParts.join(' · '));
             });
           }
@@ -1874,27 +1412,12 @@
         if (jsonRows) {
           jsonRows.forEach(cols => {
             if (!Array.isArray(cols)) return;
-            const rowText = cols.join(' ');
-            const matches = rowText.match(TRACKING_REGEX) || [];
-            matches.forEach(code => {
-              const extraCols = cols.filter(c => c && !c.toUpperCase().includes(code.toUpperCase()));
-              addEntry(code, fallbackCustomer, extraCols.slice(0, 3).join(' • '));
-            });
+            const matches = cols.join(' ').match(TRACKING_REGEX) || [];
+            matches.forEach(code => addEntry(code, fallbackCustomer, ''));
           });
         }
-
         if (jsonTrackings) {
-          jsonTrackings.forEach(t => addEntry(t, fallbackCustomer, 'นำเข้าจากปุ่มดูดข้อมูล PostOne'));
-        }
-
-        if (parsedMap.size === 0) {
-          lines.forEach(line => {
-            const firstToken = line.split(/[,\t\s]+/)[0].replace(/^["']|["']$/g, '').trim();
-            if (firstToken && firstToken.length >= 6 && /^[A-Z0-9-]+$/i.test(firstToken) && !/^วันที่$/i.test(firstToken)) {
-              const rest = line.slice(firstToken.length).replace(/^[,\t\s]+/, '').trim();
-              addEntry(firstToken, fallbackCustomer, rest.slice(0, 80));
-            }
-          });
+          jsonTrackings.forEach(t => addEntry(t, fallbackCustomer, 'นำเข้าจาก PostOne'));
         }
 
         const finalDate = detectedDate || targetDate;
@@ -1902,22 +1425,9 @@
         return { date: finalDate, parsed, shopMeta };
       }
 
-      async function switchTab(target) {
-        if (target !== 'scan' && ui.cameraActive) {
-          await stopCamera();
-        }
-        ui.activeTab = target;
-        if (target === 'import') {
-          document.getElementById('importDate').value = ui.selectedDate;
-        }
-        renderTabVisibility();
-      }
-
       function importFromRawText(rawText, chosenDate, customer, replaceDate) {
         const { date, parsed, shopMeta } = parseImportText(rawText, chosenDate, customer);
-        if (!parsed.length) {
-          return { ok: false, date, added: 0, skipped: 0 };
-        }
+        if (!parsed.length) return { ok: false, date, added: 0, skipped: 0 };
 
         if (replaceDate) {
           db.items = db.items.filter(i => i.date !== date);
@@ -1925,14 +1435,11 @@
           if (db.shopMeta && db.shopMeta[date]) delete db.shopMeta[date];
         }
 
-        const existingTrackingsOnDate = new Set(
-          db.items.filter(i => i.date === date).map(i => i.tracking)
-        );
-
+        const existing = new Set(db.items.filter(i => i.date === date).map(i => i.tracking));
         let added = 0;
         let skipped = 0;
         parsed.forEach(entry => {
-          if (existingTrackingsOnDate.has(entry.tracking)) {
+          if (existing.has(entry.tracking)) {
             skipped += 1;
           } else {
             db.items.push({
@@ -1945,7 +1452,7 @@
               verifiedAt: null,
               method: null
             });
-            existingTrackingsOnDate.add(entry.tracking);
+            existing.add(entry.tracking);
             added += 1;
           }
         });
@@ -1961,15 +1468,15 @@
       }
 
       function showImportFeedback(ok, message) {
-        const feedbackEl = document.getElementById('importFeedback');
-        feedbackEl.className = ok
-          ? 'text-xs rounded-xl p-3 font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800'
-          : 'text-xs rounded-xl p-3 font-semibold bg-red-50 border border-red-200 text-red-700';
-        feedbackEl.textContent = message;
-        feedbackEl.classList.remove('hidden');
+        const el = document.getElementById('importFeedback');
+        el.className = ok
+          ? 'text-xs rounded-xl p-2.5 font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800'
+          : 'text-xs rounded-xl p-2.5 font-semibold bg-red-50 border border-red-200 text-red-700';
+        el.textContent = message;
+        el.classList.remove('hidden');
       }
 
-      function executeImport() {
+      function executeManualImport() {
         const text = document.getElementById('importText').value;
         const chosenDate = document.getElementById('importDate').value || ui.selectedDate;
         const customer = document.getElementById('importCustomer').value.trim() || 'ลูกค้า PostOne';
@@ -1977,94 +1484,73 @@
 
         const res = importFromRawText(text, chosenDate, customer, replaceDate);
         if (!res.ok) {
-          showImportFeedback(false, 'ไม่พบเลขพัสดุในข้อมูลที่วาง กรุณาตรวจสอบว่ามีเลขพัสดุ (เช่น EM 8764 2706 0 TH หรือ EM876427060TH)');
+          showImportFeedback(false, 'ไม่พบเลขพัสดุในข้อมูลที่วาง (เช่น EM 8764 2706 0 TH หรือ EM876427060TH)');
           return;
         }
-
         document.getElementById('importText').value = '';
-        const msg = `✅ นำเข้าสำเร็จวันที่ ${formatThaiShortDate(res.date)}: เพิ่มใหม่ ${res.added} รายการ${res.skipped ? ` (ข้ามรายการซ้ำ ${res.skipped} รายการ)` : ''}`;
-        showImportFeedback(true, msg);
-        showToast(`นำเข้า ${res.added} รายการแล้ว`);
+        showImportFeedback(true, `✅ นำเข้าสำเร็จวันที่ ${formatThaiShortDate(res.date)}: เพิ่ม ${res.added} รายการ`);
+        showToast(`นำเข้ารายงาน ${res.added} รายการแล้ว`);
       }
 
-      async function handleQuickClipboardImport(fromImportTab) {
-        const chosenDate = fromImportTab
-          ? (document.getElementById('importDate').value || ui.selectedDate)
-          : ui.selectedDate;
-        const customer = fromImportTab
-          ? (document.getElementById('importCustomer').value.trim() || 'นำเข้าจากคลิปบอร์ดมือถือ')
-          : 'นำเข้าจากคลิปบอร์ดมือถือ';
-
+      async function handleQuickClipboardImport() {
+        const chosenDate = ui.selectedDate;
+        const replaceDate = document.getElementById('importReplaceDate').checked;
         if (!navigator.clipboard || !navigator.clipboard.readText) {
-          await switchTab('import');
+          document.getElementById('manualImportDrawer').classList.remove('hidden');
           document.getElementById('importText').focus();
           showToast('กรุณาแตะค้างในช่องข้อความ แล้วกด "วาง (Paste)"');
           return;
         }
-
         try {
           const clipText = await navigator.clipboard.readText();
           if (!clipText || !clipText.trim()) {
-            showToast('คลิปบอร์ดว่างเปล่า — กรุณาก๊อปปี้รายการจากหน้า PostOne ก่อน');
+            showToast('คลิปบอร์ดว่าง — กดเปิด PostOne แล้วคัดลอกรายงานก่อนครับ');
             return;
           }
-
-          if (fromImportTab) {
-            document.getElementById('importText').value = clipText;
-          }
-
-          const res = importFromRawText(clipText, chosenDate, customer);
+          const res = importFromRawText(clipText, chosenDate, 'ลูกค้า PostOne', replaceDate);
           if (!res.ok) {
-            if (!fromImportTab) await switchTab('import');
+            document.getElementById('manualImportDrawer').classList.remove('hidden');
             document.getElementById('importText').value = clipText;
-            showImportFeedback(false, 'ไม่พบเลขพัสดุ 13 หลักในข้อมูลที่ก๊อปปี้มา ลองตรวจสอบข้อความในช่องด้านบนครับ');
+            showImportFeedback(false, 'ไม่พบเลขพัสดุ 13 หลักในข้อความที่คัดลอกมา');
             showToast('ไม่พบเลขพัสดุ 13 หลักในคลิปบอร์ด');
             return;
           }
-
-          if (fromImportTab) {
-            document.getElementById('importText').value = '';
-            showImportFeedback(true, `✅ นำเข้าจากคลิปบอร์ดสำเร็จวันที่ ${formatThaiShortDate(res.date)}: เพิ่มใหม่ ${res.added} รายการ${res.skipped ? ` (ซ้ำ ${res.skipped})` : ''}`);
-          } else {
-            renderScanBanner({
-              type: 'matched',
-              tracking: `นำเข้าวันที่ ${formatThaiShortDate(res.date)}`,
-              title: '📲 ดึงข้อมูลจากคลิปบอร์ดสำเร็จ!',
-              subtitle: `เพิ่มรายการใหม่ ${res.added} ชิ้น${res.skipped ? ` (ข้ามซ้ำ ${res.skipped} ชิ้น)` : ''}`,
-              detail: 'พร้อมเปิดกล้องสแกนเช็คพัสดุได้ทันที'
-            });
-          }
-          showToast(`นำเข้า ${res.added} รายการเข้าวันที่ ${formatThaiShortDate(res.date)} แล้ว`);
+          showToast(`✅ ดึงรายงานวันที่ ${formatThaiShortDate(res.date)} สำเร็จ ${res.added} ชิ้น`);
         } catch (err) {
-          await switchTab('import');
+          document.getElementById('manualImportDrawer').classList.remove('hidden');
           document.getElementById('importText').focus();
-          showToast('เบราว์เซอร์ขอให้กดวางเอง — แตะค้างในช่องแล้วเลือก "วาง"');
+          showToast('แตะค้างในช่องข้อความด้านบน แล้วเลือก "วาง (Paste)"');
         }
       }
 
-      // Export CSV & LINE Summary
+      function checkAutoImportHash() {
+        if (!location.hash || !location.hash.startsWith('#autoimport=')) return;
+        try {
+          const encoded = location.hash.slice('#autoimport='.length);
+          const rawJson = decodeURIComponent(encoded);
+          const res = importFromRawText(rawJson, ui.selectedDate, 'ลูกค้า PostOne', true);
+          history.replaceState(null, '', location.pathname + location.search);
+          if (res.ok) {
+            showToast(`⚡ รับรายงานจาก PostOne อัตโนมัติ ${res.added} รายการ!`);
+          }
+        } catch (e) {
+          console.warn('Autoimport parse error:', e);
+        }
+      }
+
       function exportCsv() {
         const items = getDateItems(ui.selectedDate, ui.customerFilter);
         const extras = getDateExtras(ui.selectedDate);
-        if (!items.length && !extras.length) {
-          showToast('ไม่มีข้อมูลสำหรับวันที่เลือก');
-          return;
-        }
-
+        if (!items.length && !extras.length) { showToast('ไม่มีข้อมูลสำหรับวันที่เลือก'); return; }
         const csvCell = v => `"${String(v || '').replace(/"/g, '""')}"`;
-        let csv = '\uFEFFวันที่,เลขพัสดุ,ลูกค้า/รอบงาน,สถานะ,เวลาเช็ค,หมายเหตุ\n';
-
+        let csv = '\uFEFFวันที่,เลขพัสดุ,ร้าน/รอบงาน,สถานะ,เวลาเช็ค,หมายเหตุ\n';
         items.forEach(i => {
-          const statusLabel = i.status === 'verified' ? 'เช็คแล้ว' : 'ค้างเช็ค';
-          csv += [i.date, i.tracking, i.customer, statusLabel, i.verifiedAt || '-', i.note || ''].map(csvCell).join(',') + '\n';
+          csv += [i.date, i.tracking, i.customer, i.status === 'verified' ? 'เช็คแล้ว' : 'ค้างเช็ค', i.verifiedAt || '-', i.note || ''].map(csvCell).join(',') + '\n';
         });
-
         extras.forEach(e => {
-          csv += [e.date, e.tracking, '-', 'เกินระบบ (ไม่มีในข้อมูล)', e.scannedAt, `สแกน ${e.count} ครั้ง`].map(csvCell).join(',') + '\n';
+          csv += [e.date, e.tracking, '-', 'ไม่มีในรายงาน', e.scannedAt, `สแกน ${e.count} ครั้ง`].map(csvCell).join(',') + '\n';
         });
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
         const a = document.createElement('a');
         a.href = url;
         a.download = `postone_recheck_${ui.selectedDate}.csv`;
@@ -2080,90 +1566,53 @@
         const extras = getDateExtras(ui.selectedDate);
         const verified = items.filter(i => i.status === 'verified').length;
         const pendingItems = items.filter(i => i.status === 'pending');
-
         const lines = [
           `📦 สรุปยอดรีเช็คพัสดุ (${formatThaiShortDate(ui.selectedDate)})`,
-          ui.customerFilter !== 'ALL' ? `ลูกค้า: ${ui.customerFilter}` : 'ขอบเขต: ทุกลูกค้า',
-          `• ยอดในระบบ: ${items.length} ชิ้น`,
-          `• เช็คเจอแล้ว: ${verified} ชิ้น`,
-          `• ค้างเช็ค (ขาด): ${pendingItems.length} ชิ้น`,
-          `• เกินระบบ: ${extras.length} ชิ้น`
+          ui.customerFilter !== 'ALL' ? `ร้าน: ${ui.customerFilter}` : 'ขอบเขต: ทุกร้าน',
+          `• ในรายงาน: ${items.length} ชิ้น`,
+          `• เช็คแล้ว: ${verified} ชิ้น`,
+          `• ค้างเช็ค: ${pendingItems.length} ชิ้น`,
+          `• ไม่มีในรายงาน: ${extras.length} ชิ้น`
         ];
-
         if (pendingItems.length > 0) {
           lines.push('', '⏳ รายการค้างเช็ค:');
-          pendingItems.slice(0, 20).forEach(p => lines.push(`- ${p.tracking} (${p.customer})`));
+          pendingItems.slice(0, 20).forEach(p => lines.push(`- ${formatDisplayTracking(p.tracking)} (${p.customer})`));
           if (pendingItems.length > 20) lines.push(`...และอีก ${pendingItems.length - 20} รายการ`);
         }
-
         if (extras.length > 0) {
-          lines.push('', '🔴 รายการเกินระบบ:');
-          extras.forEach(e => lines.push(`- ${e.tracking}`));
+          lines.push('', '🚨 เลขที่ไม่มีในรายงาน:');
+          extras.forEach(e => lines.push(`- ${formatDisplayTracking(e.tracking)}`));
         }
-
         copyText(lines.join('\n'), 'คัดลอกสรุปยอดส่ง LINE แล้ว');
       }
 
-      async function copyText(text, successMsg) {
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast(successMsg);
-        } catch (e) {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          showToast(successMsg);
-        }
-      }
-
-      // 1-Tap Simulation Handlers
       function runSimulation(type) {
         const dateItems = getDateItems(ui.selectedDate, ui.customerFilter);
         if (type === 'matched') {
-          const nextPending = dateItems.find(i => i.status === 'pending');
-          if (!nextPending) {
-            showToast('เช็คครบทุกชิ้นของวันนี้แล้ว! ลองสลับวันหรือรีเซ็ตข้อมูลตัวอย่าง');
-            return;
-          }
-          processScan(nextPending.tracking, 'camera');
+          const next = dateItems.find(i => i.status === 'pending');
+          if (!next) { showToast('เช็คครบทุกชิ้นของวันนี้แล้ว!'); return; }
+          processScan(next.tracking, 'camera');
         } else if (type === 'duplicate') {
-          const alreadyVerified = dateItems.find(i => i.status === 'verified');
-          if (!alreadyVerified) {
-            showToast('ยังไม่มีรายการที่เช็คแล้วในวันนี้ กรุณากด "พัสดุตรงในระบบ" ก่อน');
-            return;
-          }
-          processScan(alreadyVerified.tracking, 'camera');
+          const done = dateItems.find(i => i.status === 'verified');
+          if (!done) { showToast('ยังไม่มีรายการที่เช็คแล้วในวันนี้'); return; }
+          processScan(done.tracking, 'camera');
         } else if (type === 'wrong_date') {
-          const otherDateItem = db.items.find(i => i.date !== ui.selectedDate);
-          if (!otherDateItem) {
-            showToast('ไม่พบข้อมูลของวันอื่นในระบบ');
-            return;
-          }
-          processScan(otherDateItem.tracking, 'camera');
+          const other = db.items.find(i => i.date !== ui.selectedDate);
+          if (!other) { showToast('ไม่พบข้อมูลของวันอื่นในระบบ'); return; }
+          processScan(other.tracking, 'camera');
         } else if (type === 'extra') {
-          const existingSet = new Set(db.items.map(i => i.tracking));
-          let candidate = 'EF999888777TH';
-          if (existingSet.has(candidate) || db.extras.some(e => e.date === ui.selectedDate && e.tracking === candidate)) {
-            const rand = Math.floor(100000000 + Math.random() * 899999999);
-            candidate = `EF${rand}TH`;
+          const existing = new Set(db.items.map(i => i.tracking));
+          let cand = 'EM999888777TH';
+          if (existing.has(cand) || db.extras.some(e => e.date === ui.selectedDate && e.tracking === cand)) {
+            cand = `EM${Math.floor(100000000 + Math.random() * 899999999)}TH`;
           }
-          processScan(candidate, 'camera');
+          processScan(cand, 'camera');
         }
       }
 
-      // Event Bindings
       function bindEvents() {
-        document.getElementById('selectedDate').addEventListener('change', (e) => {
-          setSelectedDate(e.target.value);
-        });
-
-        document.getElementById('customerFilter').addEventListener('change', (e) => {
-          ui.customerFilter = e.target.value;
-          renderAll();
-        });
+        document.getElementById('selectedDate').addEventListener('change', (e) => setSelectedDate(e.target.value));
+        document.getElementById('customerFilter').addEventListener('change', (e) => { ui.customerFilter = e.target.value; renderAll(); });
 
         document.getElementById('btnSoundToggle').addEventListener('click', (e) => {
           ui.soundEnabled = !ui.soundEnabled;
@@ -2171,8 +1620,44 @@
           showToast(ui.soundEnabled ? 'เปิดเสียงแจ้งเตือนแล้ว' : 'ปิดเสียงแจ้งเตือนแล้ว');
         });
 
+        document.getElementById('postoneNodeSelect').addEventListener('change', (e) => {
+          try { localStorage.setItem(NODE_STORAGE_KEY, e.target.value); } catch (err) {}
+          updatePostOneLinks();
+          showToast(`ตั้งค่าลิงก์ PostOne เป็น ${e.target.value}`);
+        });
+
+        document.getElementById('btnQuickClipboardImport').addEventListener('click', handleQuickClipboardImport);
+        document.getElementById('btnToggleManualImport').addEventListener('click', () => {
+          const drawer = document.getElementById('manualImportDrawer');
+          drawer.classList.toggle('hidden');
+          document.getElementById('importDate').value = ui.selectedDate;
+        });
+
+        document.getElementById('btnRunImport').addEventListener('click', executeManualImport);
+        document.getElementById('btnDeleteSelectedDate').addEventListener('click', () => {
+          const d = document.getElementById('importDate').value || ui.selectedDate;
+          if (!confirm(`ยืนยันลบข้อมูลทั้งหมดของวันที่ ${formatThaiShortDate(d)}?`)) return;
+          db.items = db.items.filter(i => i.date !== d);
+          db.extras = db.extras.filter(e => e.date !== d);
+          if (db.shopMeta && db.shopMeta[d]) delete db.shopMeta[d];
+          saveStorage();
+          renderAll();
+          showToast(`ล้างข้อมูลวันที่ ${formatThaiShortDate(d)} แล้ว`);
+        });
+
+        document.getElementById('importFile').addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            document.getElementById('importText').value = ev.target.result || '';
+            showToast(`อ่านไฟล์ ${file.name} แล้ว กดนำเข้าข้อความนี้ได้เลย`);
+          };
+          reader.readAsText(file, 'UTF-8');
+        });
+
         document.getElementById('btnResetSample').addEventListener('click', () => {
-          if (confirm('ต้องการรีเซ็ตกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?')) {
+          if (confirm('ต้องการโหลดข้อมูลตัวอย่างชุดเริ่มต้นใช่หรือไม่?')) {
             db = buildSampleData();
             saveStorage();
             document.getElementById('lastScanBanner').classList.add('hidden');
@@ -2181,30 +1666,20 @@
           }
         });
 
-        document.getElementById('btnToggleCamera').addEventListener('click', toggleCamera);
-        document.getElementById('btnSnapBarcode').addEventListener('click', () => {
-          document.getElementById('cameraSnapInput').click();
+        document.getElementById('btnCopyBookmarklet').addEventListener('click', () => {
+          copyText(BOOKMARKLET_CODE, 'คัดลอกโค้ด Bookmarklet ส่งข้อมูลอัตโนมัติแล้ว');
         });
+
+        document.getElementById('btnToggleCamera').addEventListener('click', toggleCamera);
+        document.getElementById('btnStickyScan').addEventListener('click', toggleCamera);
+        document.getElementById('btnSnapBarcode').addEventListener('click', () => document.getElementById('cameraSnapInput').click());
+        document.getElementById('btnStickySnap').addEventListener('click', () => document.getElementById('cameraSnapInput').click());
+        document.getElementById('btnStickyTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
         document.getElementById('cameraSnapInput').addEventListener('change', async (e) => {
           const file = e.target.files && e.target.files[0];
           e.target.value = '';
           if (file) await handleSnapshotFile(file);
-        });
-
-        document.getElementById('btnOpenMobileModal').addEventListener('click', openMobileQrModal);
-        document.getElementById('btnBannerOpenQr').addEventListener('click', openMobileQrModal);
-        document.getElementById('btnDismissMobileBanner').addEventListener('click', () => {
-          document.getElementById('localhostMobileBanner').classList.add('hidden');
-        });
-        document.getElementById('btnCloseMobileModal').addEventListener('click', closeMobileQrModal);
-        document.getElementById('mobileQrModal').addEventListener('click', (e) => {
-          if (e.target.id === 'mobileQrModal') closeMobileQrModal();
-        });
-        document.getElementById('btnQrModeHttps').addEventListener('click', () => renderMobileQr('https'));
-        document.getElementById('btnQrModeLan').addEventListener('click', () => renderMobileQr('lan'));
-        document.getElementById('btnCopyQrUrl').addEventListener('click', () => {
-          const url = document.getElementById('qrUrlInput').value;
-          copyText(url, 'คัดลอกลิงก์สำหรับมือถือแล้ว');
         });
 
         document.getElementById('manualForm').addEventListener('submit', (e) => {
@@ -2219,78 +1694,49 @@
           btn.addEventListener('click', () => runSimulation(btn.getAttribute('data-sim')));
         });
 
-        document.getElementById('btnClearRecent').addEventListener('click', () => {
-          db.recentScans = [];
-          saveStorage();
-          renderRecentFeed();
+        document.getElementById('btnCopyExtras').addEventListener('click', () => {
+          const extras = getDateExtras(ui.selectedDate);
+          if (!extras.length) return;
+          copyText(extras.map(e => e.tracking).join('\n'), `คัดลอกเลขที่ไม่มีในรายงาน ${extras.length} รายการแล้ว`);
         });
 
         document.querySelectorAll('.list-pill').forEach(btn => {
           btn.addEventListener('click', () => {
             ui.listFilter = btn.getAttribute('data-filter');
-            renderListTab();
+            renderReportList();
           });
-        });
-
-        document.getElementById('postoneNodeSelect').addEventListener('change', (e) => {
-          try {
-            localStorage.setItem(NODE_STORAGE_KEY, e.target.value);
-          } catch (err) {}
-          updatePostOneLinks();
-          showToast(`ตั้งค่าลิงก์ PostOne เป็น ${e.target.value}`);
-        });
-
-        document.getElementById('btnQuickClipboardImport').addEventListener('click', () => handleQuickClipboardImport(false));
-        document.getElementById('btnQuickClipboardImportEmpty').addEventListener('click', () => handleQuickClipboardImport(false));
-        document.getElementById('btnImportClipboard').addEventListener('click', () => handleQuickClipboardImport(true));
-
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-          btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
         });
 
         document.getElementById('btnExportCsv').addEventListener('click', exportCsv);
         document.getElementById('btnCopyLine').addEventListener('click', copyLineSummary);
 
-        document.getElementById('btnPasteExample').addEventListener('click', () => {
-          document.getElementById('importText').value =
-            '10wheels\n3 ชิ้น\nRoute 1 · Shop 27785\n' +
-            'EM 8764 2706 0 TH\n33\nปลายทาง 10150 · ขนาด 30 · ขนส่งรับเข้าระบบ\nส่วนลด 5\n' +
-            'EM 8764 2707 3 TH\n33\nปลายทาง 10310 · ขนาด 30 · ขนส่งรับเข้าระบบ\nส่วนลด 5\n' +
-            'วันที่ 20/11/2026';
+        document.getElementById('btnOpenMobileModal').addEventListener('click', () => {
+          document.getElementById('mobileQrModal').classList.remove('hidden');
+          renderMobileQr('https');
         });
-
-        document.getElementById('importFile').addEventListener('change', (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            document.getElementById('importText').value = ev.target.result || '';
-            showToast(`อ่านไฟล์ ${file.name} แล้ว กดปุ่มนำเข้าได้เลย`);
-          };
-          reader.readAsText(file, 'UTF-8');
+        document.getElementById('btnBannerOpenQr').addEventListener('click', () => {
+          document.getElementById('mobileQrModal').classList.remove('hidden');
+          renderMobileQr('https');
         });
-
-        document.getElementById('btnRunImport').addEventListener('click', executeImport);
-
-        document.getElementById('btnDeleteSelectedDate').addEventListener('click', () => {
-          const d = document.getElementById('importDate').value || ui.selectedDate;
-          if (!confirm(`ยืนยันลบข้อมูลทั้งหมดของวันที่ ${formatThaiShortDate(d)}?`)) return;
-          db.items = db.items.filter(i => i.date !== d);
-          db.extras = db.extras.filter(e => e.date !== d);
-          if (db.shopMeta && db.shopMeta[d]) delete db.shopMeta[d];
-          saveStorage();
-          renderAll();
-          showToast(`ล้างข้อมูลวันที่ ${formatThaiShortDate(d)} แล้ว`);
+        document.getElementById('btnDismissMobileBanner').addEventListener('click', () => {
+          document.getElementById('localhostMobileBanner').classList.add('hidden');
         });
-
-        document.getElementById('bookmarkletCodeBox').textContent = BOOKMARKLET_CODE;
-        document.getElementById('btnCopyBookmarklet').addEventListener('click', () => {
-          copyText(BOOKMARKLET_CODE, 'คัดลอกโค้ดปุ่มดูดข้อมูล PostOne แล้ว');
+        document.getElementById('btnCloseMobileModal').addEventListener('click', () => {
+          document.getElementById('mobileQrModal').classList.add('hidden');
+        });
+        document.getElementById('mobileQrModal').addEventListener('click', (e) => {
+          if (e.target.id === 'mobileQrModal') document.getElementById('mobileQrModal').classList.add('hidden');
+        });
+        document.getElementById('btnQrModeHttps').addEventListener('click', () => renderMobileQr('https'));
+        document.getElementById('btnQrModeLan').addEventListener('click', () => renderMobileQr('lan'));
+        document.getElementById('btnCopyQrUrl').addEventListener('click', () => {
+          copyText(document.getElementById('qrUrlInput').value, 'คัดลอกลิงก์สำหรับมือถือแล้ว');
         });
       }
 
       // Initialize
       loadStorage();
+      checkAutoImportHash();
       document.getElementById('importDate').value = ui.selectedDate;
       if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         document.getElementById('localhostMobileBanner').classList.remove('hidden');
